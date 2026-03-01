@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -11,13 +5,324 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-/**
- * =========================
- * Enums
- * =========================
- */
+model User {
+  userId              String               @id @default(uuid()) @map("user_id")
+  email               String               @unique
+  passwordHash        String               @map("password_hash")
+  firstName           String               @map("first_name")
+  lastName            String               @map("last_name")
+  phone               String?              @map("phone")
+  role                UserRole
+  active              Boolean              @default(true)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  announcements       Announcement[]
+  documentVersions    DocumentVersion[]    @relation("DocVersionUploadedBy")
+  duesImportBatches   DuesImportBatch[]
+  filesUploaded       File[]               @relation("FilesUploadedBy")
+  fileLinksCreated    FileLink[]           @relation("FileLinksCreatedBy")
+  maintenanceRequests MaintenanceRequest[] @relation("MaintenanceSubmittedBy")
+  reserveTransactions ReserveTransaction[]
+  duesUpdated         UnitDue[]            @relation("DueUpdatedBy")
+  unitOwners          UnitOwner[]
+
+  @@map("USERS")
+}
+
+model Unit {
+  unitId       String               @id @default(uuid()) @map("unit_id")
+  unitNumber   String               @unique @map("unit_number")
+  unitType     String?              @map("unit_type")
+  floor        Int?
+  bedrooms     Int?
+  bathrooms    Decimal?             @db.Decimal(10, 2)
+  squareFeet   Int?                 @map("square_feet")
+  parkingSpots Int?                 @map("parking_spots")
+  monthlyFee   Decimal              @map("monthly_fee") @db.Decimal(10, 2)
+  status       UnitStatus
+  notes        String?
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime?            @map("updated_at")
+  importLines  DuesImportLine[]
+  maintReqs    MaintenanceRequest[]
+  dues         UnitDue[]
+  owners       UnitOwner[]
+
+  @@map("UNITS")
+}
+
+model UnitOwner {
+  unitOwnerId String    @id @default(uuid()) @map("unit_owner_id")
+  unitId      String    @map("unit_id")
+  userId      String    @map("user_id")
+  startDate   DateTime  @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  unit        Unit      @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([unitId])
+  @@index([userId])
+  @@map("UNIT_OWNERS")
+}
+
+model DuesImportBatch {
+  importBatchId    String           @id @default(uuid()) @map("import_batch_id")
+  fileId           String           @map("file_id")
+  importedByUserId String           @map("imported_by_user_id")
+  periodMonth      DateTime         @map("period_month") @db.Date
+  totalRows        Int              @map("total_rows")
+  importedAt       DateTime         @default(now()) @map("imported_at")
+  file             File             @relation(fields: [fileId], references: [fileId])
+  importedBy       User             @relation(fields: [importedByUserId], references: [userId])
+  lines            DuesImportLine[]
+  dues             UnitDue[]
+
+  @@index([fileId])
+  @@index([importedByUserId])
+  @@index([periodMonth])
+  @@map("DUES_IMPORT_BATCHES")
+}
+
+model DuesImportLine {
+  importLineId  String          @id @default(uuid()) @map("import_line_id")
+  importBatchId String          @map("import_batch_id")
+  rowNumber     Int             @map("row_number")
+  unitId        String          @map("unit_id")
+  amount        Decimal         @db.Decimal(10, 2)
+  status        DueStatus
+  note          String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  batch         DuesImportBatch @relation(fields: [importBatchId], references: [importBatchId], onDelete: Cascade)
+  unit          Unit            @relation(fields: [unitId], references: [unitId])
+  dues          UnitDue[]
+
+  @@index([importBatchId])
+  @@index([unitId])
+  @@map("DUES_IMPORT_LINES")
+}
+
+model UnitDue {
+  dueId           String           @id @default(uuid()) @map("due_id")
+  unitId          String           @map("unit_id")
+  periodMonth     DateTime         @map("period_month") @db.Date
+  amount          Decimal          @db.Decimal(10, 2)
+  status          DueStatus
+  updatedByUserId String?          @map("updated_by_user_id")
+  updatedAt       DateTime?        @map("updated_at")
+  note            String?
+  emailNotifiedAt DateTime?        @map("email_notified_at")
+  importBatchId   String?          @map("import_batch_id")
+  importLineId    String?          @map("import_line_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  importBatch     DuesImportBatch? @relation(fields: [importBatchId], references: [importBatchId])
+  importLine      DuesImportLine?  @relation(fields: [importLineId], references: [importLineId])
+  unit            Unit             @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
+  updatedBy       User?            @relation("DueUpdatedBy", fields: [updatedByUserId], references: [userId])
+
+  @@unique([unitId, periodMonth])
+  @@index([periodMonth])
+  @@index([status])
+  @@map("UNIT_DUES")
+}
+
+model ExpenseCategory {
+  categoryId   String               @id @default(uuid()) @map("category_id")
+  name         String               @unique
+  description  String?
+  createdAt    DateTime             @default(now()) @map("created_at")
+  transactions ReserveTransaction[]
+
+  @@map("EXPENSE_CATEGORIES")
+}
+
+model ReserveTransaction {
+  transactionId   String                   @id @default(uuid()) @map("transaction_id")
+  categoryId      String?                  @map("category_id")
+  createdByUserId String                   @map("created_by_user_id")
+  type            ReserveTransactionType
+  status          ReserveTransactionStatus
+  title           String
+  description     String?
+  amount          Decimal                  @db.Decimal(10, 2)
+  transactionDate DateTime?                @map("transaction_date") @db.Date
+  expectedDate    DateTime?                @map("expected_date") @db.Date
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime?                @map("updated_at")
+  category        ExpenseCategory?         @relation(fields: [categoryId], references: [categoryId])
+  createdBy       User                     @relation(fields: [createdByUserId], references: [userId])
+
+  @@index([categoryId])
+  @@index([createdByUserId])
+  @@index([type])
+  @@index([status])
+  @@map("RESERVE_TRANSACTIONS")
+}
+
+model MaintenanceRequest {
+  requestId         String              @id @default(uuid()) @map("request_id")
+  unitId            String              @map("unit_id")
+  submittedByUserId String              @map("submitted_by_user_id")
+  title             String
+  description       String
+  status            MaintenanceStatus
+  priority          MaintenancePriority
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @map("updated_at")
+  closedAt          DateTime?           @map("closed_at")
+  submittedBy       User                @relation("MaintenanceSubmittedBy", fields: [submittedByUserId], references: [userId])
+  unit              Unit                @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
+
+  @@index([unitId])
+  @@index([submittedByUserId])
+  @@index([status])
+  @@index([priority])
+  @@map("MAINTENANCE_REQUESTS")
+}
+
+model Announcement {
+  announcementId  String             @id @default(uuid()) @map("announcement_id")
+  title           String
+  content         String
+  pinned          Boolean            @default(false)
+  status          AnnouncementStatus
+  publishedAt     DateTime?          @map("published_at")
+  createdByUserId String?            @map("created_by_user_id")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime?          @map("updated_at")
+  createdBy       User?              @relation(fields: [createdByUserId], references: [userId])
+
+  @@index([status])
+  @@index([publishedAt])
+  @@map("ANNOUNCEMENTS")
+}
+
+model File {
+  fileId           String            @id @default(uuid()) @map("file_id")
+  originalName     String            @map("original_name")
+  storagePath      String            @map("storage_path")
+  mimeType         String            @map("mime_type")
+  sizeBytes        BigInt            @map("size_bytes")
+  sha256Hash       String?           @map("sha256_hash")
+  uploadedByUserId String?           @map("uploaded_by_user_id")
+  uploadedAt       DateTime          @default(now()) @map("uploaded_at")
+  docVersions      DocumentVersion[]
+  duesBatches      DuesImportBatch[]
+  uploadedBy       User?             @relation("FilesUploadedBy", fields: [uploadedByUserId], references: [userId])
+  links            FileLink[]
+
+  @@index([uploadedByUserId])
+  @@map("FILES")
+}
+
+model FileLink {
+  fileLinkId     String          @id @default(uuid()) @map("file_link_id")
+  fileId         String          @map("file_id")
+  relatedType    FileRelatedType @map("related_type")
+  relatedId      String          @map("related_id")
+  linkedByUserId String?         @map("linked_by_user_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  file           File            @relation(fields: [fileId], references: [fileId], onDelete: Cascade)
+  linkedBy       User?           @relation("FileLinksCreatedBy", fields: [linkedByUserId], references: [userId])
+
+  @@index([fileId])
+  @@index([relatedType, relatedId])
+  @@index([linkedByUserId])
+  @@map("FILE_LINKS")
+}
+
+model Document {
+  documentId  String             @id @default(uuid()) @map("document_id")
+  title       String
+  docType     DocumentType       @map("doc_type")
+  visibility  DocumentVisibility
+  isMandatory Boolean            @default(false) @map("is_mandatory")
+  description String?
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime?          @map("updated_at")
+  versions    DocumentVersion[]
+  minutes     MeetingMinutes[]
+
+  @@index([docType])
+  @@index([visibility])
+  @@map("DOCUMENTS")
+}
+
+model DocumentVersion {
+  versionId        String          @id @default(uuid()) @map("version_id")
+  documentId       String          @map("document_id")
+  fileId           String          @map("file_id")
+  versionNumber    Int             @map("version_number")
+  uploadedByUserId String          @map("uploaded_by_user_id")
+  isCurrent        Boolean         @default(false) @map("is_current")
+  indexStatus      IndexStatus     @default(PENDING) @map("index_status")
+  indexedAt        DateTime?       @map("indexed_at")
+  indexError       String?         @map("index_error")
+  uploadedAt       DateTime        @default(now()) @map("uploaded_at")
+  chunks           DocumentChunk[]
+  document         Document        @relation(fields: [documentId], references: [documentId], onDelete: Cascade)
+  file             File            @relation(fields: [fileId], references: [fileId])
+  uploadedBy       User            @relation("DocVersionUploadedBy", fields: [uploadedByUserId], references: [userId])
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId])
+  @@index([fileId])
+  @@index([indexStatus])
+  @@map("DOCUMENT_VERSIONS")
+}
+
+model DocumentChunk {
+  chunkId           String             @id @default(uuid()) @map("chunk_id")
+  documentVersionId String             @map("document_version_id")
+  chunkIndex        Int                @map("chunk_index")
+  pageStart         Int?               @map("page_start")
+  pageEnd           Int?               @map("page_end")
+  text              String
+  createdAt         DateTime           @default(now()) @map("created_at")
+  version           DocumentVersion    @relation(fields: [documentVersionId], references: [versionId], onDelete: Cascade)
+  embedding         DocumentEmbedding?
+
+  @@unique([documentVersionId, chunkIndex])
+  @@index([documentVersionId])
+  @@map("DOCUMENT_CHUNKS")
+}
+
+model DocumentEmbedding {
+  embeddingId String        @id @default(uuid()) @map("embedding_id")
+  chunkId     String        @unique @map("chunk_id")
+  modelName   String        @map("model_name")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  chunk       DocumentChunk @relation(fields: [chunkId], references: [chunkId], onDelete: Cascade)
+
+  @@map("DOCUMENT_EMBEDDINGS")
+}
+
+model Meeting {
+  meetingId   String           @id @default(uuid()) @map("meeting_id")
+  meetingDate DateTime         @map("meeting_date") @db.Date
+  title       String
+  notes       String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  minutes     MeetingMinutes[]
+
+  @@index([meetingDate])
+  @@map("MEETINGS")
+}
+
+model MeetingMinutes {
+  meetingMinutesId String   @id @default(uuid()) @map("meeting_minutes_id")
+  meetingId        String   @map("meeting_id")
+  documentId       String   @map("document_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  document         Document @relation(fields: [documentId], references: [documentId], onDelete: Cascade)
+  meeting          Meeting  @relation(fields: [meetingId], references: [meetingId], onDelete: Cascade)
+
+  @@unique([meetingId, documentId])
+  @@index([meetingId])
+  @@index([documentId])
+  @@map("MEETING_MINUTES")
+}
 
 enum UserRole {
   ADMIN
@@ -91,394 +396,4 @@ enum FileRelatedType {
   UNIT_DUE
   DUES_IMPORT_BATCH
   DOCUMENT_VERSION
-}
-
-/**
- * =========================
- * Core tables
- * =========================
- */
-
-model User {
-  userId       String   @id @default(uuid()) @map("user_id")
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  firstName    String   @map("first_name")
-  lastName     String   @map("last_name")
-  phone        String?  @map("phone")
-  role         UserRole
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  // Relations
-  unitOwners          UnitOwner[]
-  duesUpdated         UnitDue[]            @relation("DueUpdatedBy")
-  duesImportBatches   DuesImportBatch[]
-  reserveTransactions ReserveTransaction[]
-  maintenanceRequests MaintenanceRequest[] @relation("MaintenanceSubmittedBy")
-  announcements       Announcement[]
-  filesUploaded       File[]               @relation("FilesUploadedBy")
-  fileLinksCreated    FileLink[]           @relation("FileLinksCreatedBy")
-  documentVersions    DocumentVersion[]    @relation("DocVersionUploadedBy")
-
-  @@map("USERS")
-}
-
-model Unit {
-  unitId       String     @id @default(uuid()) @map("unit_id")
-  unitNumber   String     @unique @map("unit_number")
-  unitType     String?    @map("unit_type")
-  floor        Int?
-  bedrooms     Int?
-  bathrooms    Decimal?   @db.Decimal(10, 2)
-  squareFeet   Int?       @map("square_feet")
-  parkingSpots Int?       @map("parking_spots")
-  monthlyFee   Decimal    @map("monthly_fee") @db.Decimal(10, 2)
-  status       UnitStatus
-  notes        String?
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime?  @map("updated_at")
-
-  // Relations
-  owners      UnitOwner[]
-  dues        UnitDue[]
-  maintReqs   MaintenanceRequest[]
-  importLines DuesImportLine[]
-
-  @@map("UNITS")
-}
-
-model UnitOwner {
-  unitOwnerId String    @id @default(uuid()) @map("unit_owner_id")
-  unitId      String    @map("unit_id")
-  userId      String    @map("user_id")
-  startDate   DateTime  @map("start_date") @db.Date
-  endDate     DateTime? @map("end_date") @db.Date
-
-  unit Unit @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([unitId])
-  @@index([userId])
-  @@map("UNIT_OWNERS")
-}
-
-/**
- * =========================
- * Dues + CSV import
- * =========================
- */
-
-model DuesImportBatch {
-  importBatchId    String   @id @default(uuid()) @map("import_batch_id")
-  fileId           String   @map("file_id")
-  importedByUserId String   @map("imported_by_user_id")
-  periodMonth      DateTime @map("period_month") @db.Date
-  totalRows        Int      @map("total_rows")
-  importedAt       DateTime @default(now()) @map("imported_at")
-
-  file       File             @relation(fields: [fileId], references: [fileId], onDelete: Restrict)
-  importedBy User             @relation(fields: [importedByUserId], references: [userId], onDelete: Restrict)
-  lines      DuesImportLine[]
-  dues       UnitDue[]
-
-  @@index([fileId])
-  @@index([importedByUserId])
-  @@index([periodMonth])
-  @@map("DUES_IMPORT_BATCHES")
-}
-
-model DuesImportLine {
-  importLineId  String    @id @default(uuid()) @map("import_line_id")
-  importBatchId String    @map("import_batch_id")
-  rowNumber     Int       @map("row_number")
-  unitId        String    @map("unit_id")
-  amount        Decimal   @db.Decimal(10, 2)
-  status        DueStatus
-  note          String?
-  createdAt     DateTime  @default(now()) @map("created_at")
-
-  batch DuesImportBatch @relation(fields: [importBatchId], references: [importBatchId], onDelete: Cascade)
-  unit  Unit            @relation(fields: [unitId], references: [unitId], onDelete: Restrict)
-
-  dues UnitDue[]
-
-  @@index([importBatchId])
-  @@index([unitId])
-  @@map("DUES_IMPORT_LINES")
-}
-
-model UnitDue {
-  dueId       String    @id @default(uuid()) @map("due_id")
-  unitId      String    @map("unit_id")
-  periodMonth DateTime  @map("period_month") @db.Date
-  amount      Decimal   @db.Decimal(10, 2)
-  status      DueStatus
-
-  updatedByUserId String?   @map("updated_by_user_id")
-  updatedAt       DateTime? @map("updated_at")
-  note            String?
-  emailNotifiedAt DateTime? @map("email_notified_at")
-
-  importBatchId String? @map("import_batch_id")
-  importLineId  String? @map("import_line_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  unit        Unit             @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
-  updatedBy   User?            @relation("DueUpdatedBy", fields: [updatedByUserId], references: [userId], onDelete: SetNull)
-  importBatch DuesImportBatch? @relation(fields: [importBatchId], references: [importBatchId], onDelete: SetNull)
-  importLine  DuesImportLine?  @relation(fields: [importLineId], references: [importLineId], onDelete: SetNull)
-
-  @@unique([unitId, periodMonth])
-  @@index([periodMonth])
-  @@index([status])
-  @@map("UNIT_DUES")
-}
-
-/**
- * =========================
- * Reserve fund tracking
- * =========================
- */
-
-model ExpenseCategory {
-  categoryId  String   @id @default(uuid()) @map("category_id")
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  transactions ReserveTransaction[]
-
-  @@map("EXPENSE_CATEGORIES")
-}
-
-model ReserveTransaction {
-  transactionId   String                   @id @default(uuid()) @map("transaction_id")
-  categoryId      String?                  @map("category_id")
-  createdByUserId String                   @map("created_by_user_id")
-  type            ReserveTransactionType
-  status          ReserveTransactionStatus
-  title           String
-  description     String?
-  amount          Decimal                  @db.Decimal(10, 2)
-  transactionDate DateTime?                @map("transaction_date") @db.Date
-  expectedDate    DateTime?                @map("expected_date") @db.Date
-  createdAt       DateTime                 @default(now()) @map("created_at")
-  updatedAt       DateTime?                @map("updated_at")
-
-  category  ExpenseCategory? @relation(fields: [categoryId], references: [categoryId], onDelete: SetNull)
-  createdBy User             @relation(fields: [createdByUserId], references: [userId], onDelete: Restrict)
-
-  @@index([categoryId])
-  @@index([createdByUserId])
-  @@index([type])
-  @@index([status])
-  @@map("RESERVE_TRANSACTIONS")
-}
-
-/**
- * =========================
- * Maintenance
- * =========================
- */
-
-model MaintenanceRequest {
-  requestId         String              @id @default(uuid()) @map("request_id")
-  unitId            String              @map("unit_id")
-  submittedByUserId String              @map("submitted_by_user_id")
-  title             String
-  description       String
-  status            MaintenanceStatus
-  priority          MaintenancePriority
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @map("updated_at")
-  closedAt          DateTime?           @map("closed_at")
-
-  unit        Unit @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
-  submittedBy User @relation("MaintenanceSubmittedBy", fields: [submittedByUserId], references: [userId], onDelete: Restrict)
-
-  @@index([unitId])
-  @@index([submittedByUserId])
-  @@index([status])
-  @@index([priority])
-  @@map("MAINTENANCE_REQUESTS")
-}
-
-/**
- * =========================
- * Announcements (public viewing)
- * =========================
- */
-
-model Announcement {
-  announcementId  String             @id @default(uuid()) @map("announcement_id")
-  title           String
-  content         String
-  pinned          Boolean            @default(false)
-  status          AnnouncementStatus
-  publishedAt     DateTime?          @map("published_at")
-  createdByUserId String?            @map("created_by_user_id")
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime?          @map("updated_at")
-
-  createdBy User? @relation(fields: [createdByUserId], references: [userId], onDelete: SetNull)
-
-  @@index([status])
-  @@index([publishedAt])
-  @@map("ANNOUNCEMENTS")
-}
-
-/**
- * =========================
- * Files + generic links
- * =========================
- */
-
-model File {
-  fileId           String   @id @default(uuid()) @map("file_id")
-  originalName     String   @map("original_name")
-  storagePath      String   @map("storage_path")
-  mimeType         String   @map("mime_type")
-  sizeBytes        BigInt   @map("size_bytes")
-  sha256Hash       String?  @map("sha256_hash")
-  uploadedByUserId String?  @map("uploaded_by_user_id")
-  uploadedAt       DateTime @default(now()) @map("uploaded_at")
-
-  uploadedBy  User?             @relation("FilesUploadedBy", fields: [uploadedByUserId], references: [userId], onDelete: SetNull)
-  links       FileLink[]
-  duesBatches DuesImportBatch[]
-  docVersions DocumentVersion[]
-
-  @@index([uploadedByUserId])
-  @@map("FILES")
-}
-
-model FileLink {
-  fileLinkId     String          @id @default(uuid()) @map("file_link_id")
-  fileId         String          @map("file_id")
-  relatedType    FileRelatedType @map("related_type")
-  relatedId      String          @map("related_id")
-  linkedByUserId String?         @map("linked_by_user_id")
-  createdAt      DateTime        @default(now()) @map("created_at")
-
-  file     File  @relation(fields: [fileId], references: [fileId], onDelete: Cascade)
-  linkedBy User? @relation("FileLinksCreatedBy", fields: [linkedByUserId], references: [userId], onDelete: SetNull)
-
-  @@index([fileId])
-  @@index([relatedType, relatedId])
-  @@index([linkedByUserId])
-  @@map("FILE_LINKS")
-}
-
-/**
- * =========================
- * Documents + indexing
- * =========================
- */
-
-model Document {
-  documentId  String             @id @default(uuid()) @map("document_id")
-  title       String
-  docType     DocumentType       @map("doc_type")
-  visibility  DocumentVisibility
-  isMandatory Boolean            @default(false) @map("is_mandatory")
-  description String?
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime?          @map("updated_at")
-
-  versions DocumentVersion[]
-  minutes  MeetingMinutes[]
-
-  @@index([docType])
-  @@index([visibility])
-  @@map("DOCUMENTS")
-}
-
-model DocumentVersion {
-  versionId        String      @id @default(uuid()) @map("version_id")
-  documentId       String      @map("document_id")
-  fileId           String      @map("file_id")
-  versionNumber    Int         @map("version_number")
-  uploadedByUserId String      @map("uploaded_by_user_id")
-  isCurrent        Boolean     @default(false) @map("is_current")
-  indexStatus      IndexStatus @default(PENDING) @map("index_status")
-  indexedAt        DateTime?   @map("indexed_at")
-  indexError       String?     @map("index_error")
-  uploadedAt       DateTime    @default(now()) @map("uploaded_at")
-
-  document   Document @relation(fields: [documentId], references: [documentId], onDelete: Cascade)
-  file       File     @relation(fields: [fileId], references: [fileId], onDelete: Restrict)
-  uploadedBy User     @relation("DocVersionUploadedBy", fields: [uploadedByUserId], references: [userId], onDelete: Restrict)
-
-  chunks DocumentChunk[]
-
-  @@unique([documentId, versionNumber])
-  @@index([documentId])
-  @@index([fileId])
-  @@index([indexStatus])
-  @@map("DOCUMENT_VERSIONS")
-}
-
-model DocumentChunk {
-  chunkId           String   @id @default(uuid()) @map("chunk_id")
-  documentVersionId String   @map("document_version_id")
-  chunkIndex        Int      @map("chunk_index")
-  pageStart         Int?     @map("page_start")
-  pageEnd           Int?     @map("page_end")
-  text              String   @db.Text
-  createdAt         DateTime @default(now()) @map("created_at")
-
-  version   DocumentVersion    @relation(fields: [documentVersionId], references: [versionId], onDelete: Cascade)
-  embedding DocumentEmbedding?
-
-  @@unique([documentVersionId, chunkIndex])
-  @@index([documentVersionId])
-  @@map("DOCUMENT_CHUNKS")
-}
-
-model DocumentEmbedding {
-  embeddingId String @id @default(uuid()) @map("embedding_id")
-  chunkId     String @unique @map("chunk_id")
-  modelName   String @map("model_name")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  chunk DocumentChunk @relation(fields: [chunkId], references: [chunkId], onDelete: Cascade)
-
-  @@map("DOCUMENT_EMBEDDINGS")
-}
-
-/**
- * =========================
- * Meetings + Minutes
- * =========================
- */
-
-model Meeting {
-  meetingId   String   @id @default(uuid()) @map("meeting_id")
-  meetingDate DateTime @map("meeting_date") @db.Date
-  title       String
-  notes       String?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  minutes MeetingMinutes[]
-
-  @@index([meetingDate])
-  @@map("MEETINGS")
-}
-
-model MeetingMinutes {
-  meetingMinutesId String   @id @default(uuid()) @map("meeting_minutes_id")
-  meetingId        String   @map("meeting_id")
-  documentId       String   @map("document_id")
-  createdAt        DateTime @default(now()) @map("created_at")
-
-  meeting  Meeting  @relation(fields: [meetingId], references: [meetingId], onDelete: Cascade)
-  document Document @relation(fields: [documentId], references: [documentId], onDelete: Cascade)
-
-  @@unique([meetingId, documentId])
-  @@index([meetingId])
-  @@index([documentId])
-  @@map("MEETING_MINUTES")
 }
