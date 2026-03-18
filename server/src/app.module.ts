@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { AuthModule } from './auth/auth.module';
+import { MaintenanceRequestsModule } from './maintenance-requests/maintenance-requests.module';
 import { UnitDuesModule } from './unit-dues/unit-dues.module';
 import { ReserveTransactionsModule } from './reserve-transactions/reserve-transactions.module';
 import { UnitOwnersModule } from './unit-owners/unit-owners.module';
@@ -13,6 +14,7 @@ import { UsersModule } from './users/users.module';
   imports: [
     AnnouncementsModule,
     AuthModule,
+    MaintenanceRequestsModule,
     UsersModule,
     UnitsModule,
     UnitOwnersModule,

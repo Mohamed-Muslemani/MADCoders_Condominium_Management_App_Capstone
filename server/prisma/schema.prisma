@@ -106,6 +106,8 @@ model UnitDue {
   dueId           String           @id @default(uuid()) @map("due_id")
   unitId          String           @map("unit_id")
   periodMonth     DateTime         @map("period_month") @db.Date
+  dueDate         DateTime         @map("due_date") @db.Date
+  paidDate        DateTime?        @map("paid_date") @db.Date
   amount          Decimal          @db.Decimal(10, 2)
   status          DueStatus
   updatedByUserId String?          @map("updated_by_user_id")
@@ -161,7 +163,8 @@ model ReserveTransaction {
 
 model MaintenanceRequest {
   requestId         String              @id @default(uuid()) @map("request_id")
-  unitId            String              @map("unit_id")
+  scope             MaintenanceScope    @default(UNIT)
+  unitId            String?             @map("unit_id")
   submittedByUserId String              @map("submitted_by_user_id")
   title             String
   description       String
@@ -171,10 +174,11 @@ model MaintenanceRequest {
   updatedAt         DateTime            @map("updated_at")
   closedAt          DateTime?           @map("closed_at")
   submittedBy       User                @relation("MaintenanceSubmittedBy", fields: [submittedByUserId], references: [userId])
-  unit              Unit                @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
+  unit              Unit?               @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
 
   @@index([unitId])
   @@index([submittedByUserId])
+  @@index([scope])
   @@index([status])
   @@index([priority])
   @@map("MAINTENANCE_REQUESTS")
@@ -356,6 +360,11 @@ enum MaintenanceStatus {
   IN_PROGRESS
   COMPLETED
   CLOSED
+}
+
+enum MaintenanceScope {
+  UNIT
+  BUILDING
 }
 
 enum MaintenancePriority {
