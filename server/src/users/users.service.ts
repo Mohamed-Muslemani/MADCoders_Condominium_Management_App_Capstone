@@ -90,6 +90,30 @@ export class UsersService {
     }
   }
 
+  // Update For Owners Only 
+    async updateOwnProfile(userId: string, dto: UpdateUserDto) {
+    try {
+      const data: Prisma.UserUpdateInput = {
+        email: dto.email,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+      };
+
+      if (dto.password) {
+        data.passwordHash = await bcrypt.hash(dto.password, 10);
+      }
+
+      return await this.prisma.user.update({
+        where: { userId },
+        data,
+        select: safeUserSelect,
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
   async remove(userId: string) {
     try {
       await this.prisma.user.delete({
