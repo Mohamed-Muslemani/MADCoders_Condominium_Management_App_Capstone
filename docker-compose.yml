@@ -28,8 +28,6 @@ services:
       dockerfile: Dockerfile.dev
     container_name: condo_server
     restart: unless-stopped
-    env_file:
-      - ./server/.env
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/condo_db?schema=public}
