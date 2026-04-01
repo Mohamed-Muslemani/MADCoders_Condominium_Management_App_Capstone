@@ -2,39 +2,55 @@ services:
   db:
     image: postgres:16
     container_name: condo_db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: condo_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-condo_db}
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-condo_db}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   server:
     build:
       context: ./server
       dockerfile: Dockerfile.dev
     container_name: condo_server
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/condo_db?schema=public
-      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/condo_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-password}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      PORT: ${PORT:-3000}
     ports:
       - "3000:3000"
-      - "5555:5555"
     volumes:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   client:
     build:
       context: ./client
       dockerfile: Dockerfile.dev
     container_name: condo_client
+    restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:3000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
     ports:
       - "5173:5173"
     volumes:

@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -60,14 +59,14 @@ export class UsersService {
         },
         select: safeUserSelect,
       });
-    } catch (error) {
+    } catch (error: any) {
       this.handlePrismaError(error);
     }
   }
 
   async update(userId: string, dto: UpdateUserDto) {
     try {
-      const data: Prisma.UserUpdateInput = {
+      const data: any = {
         email: dto.email,
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -85,15 +84,14 @@ export class UsersService {
         data,
         select: safeUserSelect,
       });
-    } catch (error) {
+    } catch (error: any) {
       this.handlePrismaError(error);
     }
   }
 
-  // Update For Owners Only 
-    async updateOwnProfile(userId: string, dto: UpdateUserDto) {
+  async updateOwnProfile(userId: string, dto: UpdateUserDto) {
     try {
-      const data: Prisma.UserUpdateInput = {
+      const data: any = {
         email: dto.email,
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -109,7 +107,7 @@ export class UsersService {
         data,
         select: safeUserSelect,
       });
-    } catch (error) {
+    } catch (error: any) {
       this.handlePrismaError(error);
     }
   }
@@ -119,21 +117,22 @@ export class UsersService {
       await this.prisma.user.delete({
         where: { userId },
       });
+
       return { deleted: true };
-    } catch (error) {
+    } catch (error: any) {
       this.handlePrismaError(error);
     }
   }
 
-  private handlePrismaError(error: unknown): never {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        throw new BadRequestException('Email is already in use');
-      }
-      if (error.code === 'P2025') {
-        throw new NotFoundException('User not found');
-      }
+  private handlePrismaError(error: any): never {
+    if (error?.code === 'P2002') {
+      throw new BadRequestException('Email is already in use');
     }
+
+    if (error?.code === 'P2025') {
+      throw new NotFoundException('User not found');
+    }
+
     throw error;
   }
 }
