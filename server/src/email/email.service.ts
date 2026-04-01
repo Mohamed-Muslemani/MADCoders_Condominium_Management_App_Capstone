@@ -1,5 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import { render } from '@react-email/render';
+import { WelcomeEmail } from './templates/welcome-email';
 
 @Injectable()
 export class EmailService {
@@ -31,6 +33,13 @@ export class EmailService {
     }
   }
 
+  async sendWelcomeEmail(to: string, name: string): Promise<void> {
+    const subject = 'Welcome to Condo Manager';
+    const html = await render(WelcomeEmail({ name }));
+
+    await this.sendEmail(to, subject, html);
+  }
+
   async sendUnpaidDuesReminder(
     to: string,
     ownerName: string,
@@ -47,7 +56,7 @@ export class EmailService {
       <p><strong>Unit:</strong> ${unitNumber}</p>
       <p><strong>Amount Due:</strong> $${amountDue}</p>
       <p><strong>Due Date:</strong> ${dueDate}</p>
-      <p>Please make your payment as soon as possible.</p>
+      <p>Please make payment as soon as possible.</p>
       <p>Thank you,<br />Condo Management</p>
     `;
 
