@@ -11,6 +11,7 @@ import { UnitsModule } from './units/units.module';
 import { UsersModule } from './users/users.module';
 import { EmailModule } from './email/email.module';
 import { MeetingsModule } from './meetings/meetings.module';
+import { DocumentsModule } from './documents/documents.module';
 
 
 @Module({
@@ -25,6 +26,7 @@ import { MeetingsModule } from './meetings/meetings.module';
     ReserveTransactionsModule,
     EmailModule,
     MeetingsModule
+    DocumentsModule
   ],
   controllers: [AppController],
   providers: [AppService],
