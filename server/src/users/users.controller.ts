@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -14,32 +25,32 @@ export class UsersController {
 
   // This is an owner method.
   @Get('me')
-async getMe(
-  @Req() req: Request & { user: { sub?: string; userId?: string } },
-) {
-  const userId = req.user?.sub || req.user?.userId;
+  async getMe(
+    @Req() req: Request & { user: { sub?: string; userId?: string } },
+  ) {
+    const userId = req.user?.sub || req.user?.userId;
 
-  if (!userId) {
-    throw new Error('User ID not found in token');
+    if (!userId) {
+      throw new UnauthorizedException('User ID not found in token');
+    }
+
+    return this.usersService.findOne(userId);
   }
 
-  return this.usersService.findOne(userId);
-}
-
-// This is an owner method. 
+  // This is an owner method.
   @Patch('me')
-async updateMe(
-  @Req() req: Request & { user: { sub?: string; userId?: string } },
-  @Body() dto: UpdateUserDto,
-) {
-  const userId = req.user?.sub || req.user?.userId;
+  async updateMe(
+    @Req() req: Request & { user: { sub?: string; userId?: string } },
+    @Body() dto: UpdateUserDto,
+  ) {
+    const userId = req.user?.sub || req.user?.userId;
 
-  if (!userId) {
-    throw new Error('User ID not found in token');
+    if (!userId) {
+      throw new UnauthorizedException('User ID not found in token');
+    }
+
+    return this.usersService.updateOwnProfile(userId, dto);
   }
-
-  return this.usersService.updateOwnProfile(userId, dto);
-}
 
   @Roles('ADMIN')
   @Get()

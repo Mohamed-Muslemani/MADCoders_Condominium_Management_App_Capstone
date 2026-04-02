@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, NotFoundException, Post } from '@nestjs/common';
 import { EmailService } from './email.service';
 
 @Controller('email')
@@ -7,6 +7,10 @@ export class EmailController {
 
   @Post('test')
   async sendTestEmail() {
+    if (process.env.NODE_ENV !== 'development') {
+      throw new NotFoundException();
+    }
+
     await this.emailService.sendUnpaidDuesReminder(
       process.env.SMTP_USER || '',
       'Chris Jamo',
