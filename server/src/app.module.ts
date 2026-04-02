@@ -10,6 +10,7 @@ import { UnitOwnersModule } from './unit-owners/unit-owners.module';
 import { UnitsModule } from './units/units.module';
 import { UsersModule } from './users/users.module';
 import { EmailModule } from './email/email.module';
+import { DocumentsModule } from './documents/documents.module';
 
 
 @Module({
@@ -22,7 +23,8 @@ import { EmailModule } from './email/email.module';
     UnitOwnersModule,
     UnitDuesModule,
     ReserveTransactionsModule,
-    EmailModule
+    EmailModule,
+    DocumentsModule
   ],
   controllers: [AppController],
   providers: [AppService],
