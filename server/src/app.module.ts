@@ -25,8 +25,8 @@ import { DocumentsModule } from './documents/documents.module';
     UnitDuesModule,
     ReserveTransactionsModule,
     EmailModule,
-    MeetingsModule
-    DocumentsModule
+    MeetingsModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
