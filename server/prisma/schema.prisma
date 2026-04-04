@@ -295,6 +295,7 @@ model DocumentEmbedding {
   embeddingId String        @id @default(uuid()) @map("embedding_id")
   chunkId     String        @unique @map("chunk_id")
   modelName   String        @map("model_name")
+  embedding   Unsupported("vector") @map("embedding")
   createdAt   DateTime      @default(now()) @map("created_at")
   chunk       DocumentChunk @relation(fields: [chunkId], references: [chunkId], onDelete: Cascade)
 
