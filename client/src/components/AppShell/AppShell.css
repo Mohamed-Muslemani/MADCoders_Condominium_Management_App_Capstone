@@ -1,0 +1,229 @@
+:root {
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --text: #0f172a;
+    --line: #e5eaf3;
+  
+    --navy: #071a33;
+    --navy2: #0b2b55;
+  
+    --steel: #2563eb;
+    --steel2: #1d4ed8;
+  
+    --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  .app-shell {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+  }
+  
+  /* HEADER */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(90deg, var(--navy), var(--navy2));
+    color: #fff;
+  }
+  
+  .app-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  
+  .app-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 250px;
+  }
+  
+  .app-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+    flex-shrink: 0;
+  }
+  
+  .app-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .app-brand-name {
+    display: block;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    color: #fff;
+  }
+  
+  .app-brand-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #fff;
+    opacity: 0.85;
+  }
+  
+  .app-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 320px;
+  }
+  
+  .app-btn {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.15s ease;
+  }
+  
+  .app-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  
+  .app-btn-primary {
+    border: none;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--steel), var(--steel2));
+  }
+  
+  .app-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .app-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    flex-shrink: 0;
+    color: var(--navy);
+    background: rgba(255, 255, 255, 0.85);
+  }
+  
+  .app-profile strong {
+    display: block;
+    font-size: 13px;
+    color: #fff;
+  }
+  
+  .app-profile span {
+    display: block;
+    font-size: 12px;
+    color: #fff;
+    opacity: 0.85;
+  }
+  
+  /* BODY */
+  .app-body {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 270px 1fr;
+    gap: 14px;
+  }
+  
+  .app-sidebar {
+    min-width: 0;
+  }
+  
+  .app-main {
+    min-width: 0;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  
+  /* TABLET + MOBILE */
+  @media (max-width: 980px) {
+    .app-header-inner {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .app-brand {
+      min-width: unset;
+    }
+  
+    .app-header-actions {
+      min-width: unset;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+  
+    .app-body {
+      grid-template-columns: 1fr;
+    }
+  
+    .app-sidebar {
+      order: 1;
+    }
+  
+    .app-main {
+      order: 2;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    .app-header-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .app-btn {
+      width: 100%;
+    }
+  
+    .app-btn-primary {
+      width: 100%;
+    }
+  
+    .app-profile {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+  
+  @media (max-width: 520px) {
+    .app-profile span {
+      display: none;
+    }
+  
+    .app-brand-sub {
+      font-size: 11px;
+    }
+  }

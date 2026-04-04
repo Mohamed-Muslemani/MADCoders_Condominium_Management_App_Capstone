@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppShell } from '../components/AppShell';
+import { AppShell } from '../components/AppShell/AppShell';
 import { useAuth } from '../context/useAuth';
 import { AnnouncementsPage } from '../pages/AnnouncementsPage';
 import { LoginPage } from '../pages/LoginPage';
