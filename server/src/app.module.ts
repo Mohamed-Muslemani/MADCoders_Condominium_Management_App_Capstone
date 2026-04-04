@@ -10,6 +10,7 @@ import { UnitOwnersModule } from './unit-owners/unit-owners.module';
 import { UnitsModule } from './units/units.module';
 import { UsersModule } from './users/users.module';
 import { EmailModule } from './email/email.module';
+import { MeetingsModule } from './meetings/meetings.module';
 import { DocumentsModule } from './documents/documents.module';
 
 
@@ -24,6 +25,7 @@ import { DocumentsModule } from './documents/documents.module';
     UnitDuesModule,
     ReserveTransactionsModule,
     EmailModule,
+    MeetingsModule,
     DocumentsModule,
   ],
   controllers: [AppController],

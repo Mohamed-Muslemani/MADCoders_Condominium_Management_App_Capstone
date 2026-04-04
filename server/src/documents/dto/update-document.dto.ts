@@ -13,15 +13,18 @@ export enum DocumentVisibility {
   BOARD_ONLY = 'BOARD_ONLY',
 }
 
-export class CreateDocumentDto {
+export class UpdateDocumentDto {
   @IsString()
-  title: string;
+  @IsOptional()
+  title?: string;
 
   @IsEnum(DocumentType)
-  docType: DocumentType;
+  @IsOptional()
+  docType?: DocumentType;
 
   @IsEnum(DocumentVisibility)
-  visibility: DocumentVisibility;
+  @IsOptional()
+  visibility?: DocumentVisibility;
 
   @IsBoolean()
   @IsOptional()

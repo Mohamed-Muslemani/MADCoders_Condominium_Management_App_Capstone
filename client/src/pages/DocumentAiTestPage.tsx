@@ -6,15 +6,11 @@ import {
   listDocuments,
   uploadDocumentVersion,
   type AskDocumentsResponse,
-  type AuthUser,
   type DocumentSummary,
 } from '../api';
-
-type Props = {
-  token: string;
-  user: AuthUser;
-  onLogout: () => void;
-};
+import { getMe } from '../api/auth';
+import { useAuth } from '../context/useAuth';
+import type { User } from '../types/user';
 
 const documentTypes = [
   'CONDO_DOC',
@@ -33,14 +29,13 @@ const initialCreateForm = {
   description: '',
 };
 
-export default function DocumentAiTestPage({
-  token,
-  user,
-  onLogout,
-}: Props) {
+export function DocumentAiTestPage() {
+  const { token } = useAuth();
+  const authToken = token ?? '';
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState('');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [createLoading, setCreateLoading] = useState(false);
@@ -63,14 +58,29 @@ export default function DocumentAiTestPage({
 
   useEffect(() => {
     void refreshDocuments();
+    void loadCurrentUser();
   }, []);
 
+  async function loadCurrentUser() {
+    try {
+      setCurrentUser(await getMe());
+    } catch {
+      setCurrentUser(null);
+    }
+  }
+
   async function refreshDocuments() {
+    if (!token) {
+      setDocuments([]);
+      setDocumentsLoading(false);
+      return;
+    }
+
     setDocumentsLoading(true);
     setDocumentsError('');
 
     try {
-      const result = await listDocuments(token);
+      const result = await listDocuments(authToken);
       setDocuments(result);
 
       if (!selectedDocumentId && result[0]) {
@@ -90,7 +100,7 @@ export default function DocumentAiTestPage({
     setAdminError('');
 
     try {
-      const created = await createDocument(token, createForm);
+      const created = await createDocument(authToken, createForm);
       setCreateMessage(`Created "${created.title}" (${created.documentId})`);
       setCreateForm(initialCreateForm);
       setSelectedDocumentId(created.documentId);
@@ -121,7 +131,7 @@ export default function DocumentAiTestPage({
 
     try {
       const version = await uploadDocumentVersion(
-        token,
+        authToken,
         selectedDocumentId,
         selectedFile,
       );
@@ -162,7 +172,7 @@ export default function DocumentAiTestPage({
     setAdminError('');
 
     try {
-      await generateEmbeddings(token, versionIdForEmbeddings.trim());
+      await generateEmbeddings(authToken, versionIdForEmbeddings.trim());
       setEmbeddingsMessage(
         `Embeddings request completed for version ${versionIdForEmbeddings.trim()}.`,
       );
@@ -187,7 +197,7 @@ export default function DocumentAiTestPage({
     setAskResult(null);
 
     try {
-      const response = await askDocuments(token, question.trim());
+      const response = await askDocuments(authToken, question.trim());
       setAskResult(response);
     } catch (error) {
       setAskError(getErrorMessage(error));
@@ -197,25 +207,23 @@ export default function DocumentAiTestPage({
   }
 
   return (
-    <main className="app-shell">
+    <section className="stack">
       <header className="app-header">
         <div>
           <h1>AI Document Test</h1>
           <p>
-            Signed in as {user.email} ({user.role})
+            Signed in as {currentUser?.email ?? 'Unknown user'} (
+            {currentUser?.role ?? 'unknown'})
           </p>
         </div>
         <div className="header-actions">
           <button type="button" onClick={() => void refreshDocuments()}>
             Refresh documents
           </button>
-          <button type="button" className="secondary-button" onClick={onLogout}>
-            Log out
-          </button>
         </div>
       </header>
 
-      {user.role !== 'ADMIN' ? (
+      {currentUser?.role !== 'ADMIN' ? (
         <section className="panel">
           <h2>Access note</h2>
           <p className="error-message">
@@ -468,7 +476,7 @@ export default function DocumentAiTestPage({
           </div>
         ) : null}
       </section>
-    </main>
+    </section>
   );
 }
 

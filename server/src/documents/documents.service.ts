@@ -12,6 +12,7 @@ import { DocumentEmbeddingsService } from './documents.embeddings.service';
 import { DocumentIngestionService } from './documents.ingestion.service';
 import { DocumentsQaService } from './documents.qa.service';
 import { DocumentsRetrievalService } from './documents.retrieval.service';
+import { UpdateDocumentDto } from './dto/update-document.dto';
 
 type UploadedDocumentFile = {
   originalname: string;
@@ -127,6 +128,10 @@ export class DocumentsService {
     return serializeBigInt(document);
   }
 
+  async create(dto: CreateDocumentDto) {
+    return this.createDocument(dto);
+  }
+
   async findAll() {
     const documents = await this.prisma.document.findMany({
       select: documentSelect,
@@ -147,6 +152,34 @@ export class DocumentsService {
     }
 
     return serializeBigInt(document);
+  }
+
+  async update(documentId: string, dto: UpdateDocumentDto) {
+    await this.ensureDocumentExists(documentId);
+
+    const document = await this.prisma.document.update({
+      where: { documentId },
+      data: {
+        title: dto.title,
+        docType: dto.docType,
+        visibility: dto.visibility,
+        isMandatory: dto.isMandatory,
+        description: dto.description,
+      },
+      select: documentSelect,
+    });
+
+    return serializeBigInt(document);
+  }
+
+  async remove(documentId: string) {
+    await this.ensureDocumentExists(documentId);
+
+    await this.prisma.document.delete({
+      where: { documentId },
+    });
+
+    return { deleted: true };
   }
 
   async findVersion(versionId: string) {

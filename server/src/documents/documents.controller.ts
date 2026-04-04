@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Patch,
   ParseFilePipeBuilder,
   Param,
   Post,
@@ -15,8 +17,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AskDocumentsDto } from './dto/ask-documents.dto';
-import { CreateDocumentDto } from './dto/create-document.dto';
+import {
+  CreateDocumentDto,
+} from './dto/create-document.dto';
 import { SearchDocumentsDto } from './dto/search-documents.dto';
+import { UpdateDocumentDto } from './dto/update-document.dto';
 import { DocumentsService } from './documents.service';
 
 const MAX_PDF_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -71,6 +76,19 @@ export class DocumentsController {
   @Get(':documentId')
   async findOne(@Param('documentId') documentId: string) {
     return this.documentsService.findOne(documentId);
+  }
+
+  @Patch(':documentId')
+  async updateDocument(
+    @Param('documentId') documentId: string,
+    @Body() dto: UpdateDocumentDto,
+  ) {
+    return this.documentsService.update(documentId, dto);
+  }
+
+  @Delete(':documentId')
+  async removeDocument(@Param('documentId') documentId: string) {
+    return this.documentsService.remove(documentId);
   }
 
   @Post(':documentId/versions')
