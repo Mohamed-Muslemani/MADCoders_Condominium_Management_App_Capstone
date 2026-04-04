@@ -2,6 +2,7 @@
 import { NavLink } from 'react-router-dom';
 
 const links = [
+  { to: '/ai-documents', label: 'AI Documents' },
   { to: '/units', label: 'Units' },
   { to: '/users', label: 'Users' },
   { to: '/unit-owners', label: 'Unit Owners' },

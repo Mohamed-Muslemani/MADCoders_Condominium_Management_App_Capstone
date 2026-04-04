@@ -16,7 +16,7 @@ export function LoginPage() {
       setError('');
       const result = await login(values);
       setToken(result.accessToken);
-      navigate('/units', { replace: true });
+      navigate('/users', { replace: true });
     } catch {
       setError('Invalid credentials');
     } finally {
