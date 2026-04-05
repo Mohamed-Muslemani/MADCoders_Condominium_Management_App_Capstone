@@ -85,20 +85,27 @@ model DuesImportBatch {
 }
 
 model DuesImportLine {
-  importLineId  String          @id @default(uuid()) @map("import_line_id")
-  importBatchId String          @map("import_batch_id")
-  rowNumber     Int             @map("row_number")
-  unitId        String          @map("unit_id")
-  amount        Decimal         @db.Decimal(10, 2)
-  status        DueStatus
+  importLineId  String           @id @default(uuid()) @map("import_line_id")
+  importBatchId String           @map("import_batch_id")
+  rowNumber     Int              @map("row_number")
+  sourceUnitId  String?          @map("source_unit_id")
+  unitId        String?          @map("unit_id")
+  periodMonth   DateTime?        @map("period_month") @db.Date
+  dueDate       DateTime?        @map("due_date") @db.Date
+  paidDate      DateTime?        @map("paid_date") @db.Date
+  amount        Decimal?         @db.Decimal(10, 2)
+  status        DueStatus?
   note          String?
-  createdAt     DateTime        @default(now()) @map("created_at")
-  batch         DuesImportBatch @relation(fields: [importBatchId], references: [importBatchId], onDelete: Cascade)
-  unit          Unit            @relation(fields: [unitId], references: [unitId])
+  rowStatus     ImportLineStatus @default(PENDING) @map("row_status")
+  errorReason   String?          @map("error_reason")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  batch         DuesImportBatch  @relation(fields: [importBatchId], references: [importBatchId], onDelete: Cascade)
+  unit          Unit?            @relation(fields: [unitId], references: [unitId])
   dues          UnitDue[]
 
   @@index([importBatchId])
   @@index([unitId])
+  @@index([rowStatus])
   @@map("DUES_IMPORT_LINES")
 }
 
@@ -399,10 +406,19 @@ enum IndexStatus {
   FAILED
 }
 
+enum ImportLineStatus {
+  PENDING
+  APPLIED
+  FAILED
+}
+
 enum FileRelatedType {
   RESERVE_TRANSACTION
   MAINTENANCE_REQUEST
   UNIT_DUE
   DUES_IMPORT_BATCH
+  DOCUMENT
   DOCUMENT_VERSION
+  MEETING
+  MEETING_MINUTES
 }

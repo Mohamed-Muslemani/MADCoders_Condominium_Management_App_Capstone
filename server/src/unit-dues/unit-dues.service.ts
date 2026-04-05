@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { CreateUnitDueDto } from './dto/create-unit-due.dto';
 import { UpdateUnitDueDto } from './dto/update-unit-due.dto';
 
@@ -31,7 +32,10 @@ const safeUnitDueSelect = {
 
 @Injectable()
 export class UnitDuesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async findAll() {
     return this.prisma.unitDue.findMany({
@@ -147,6 +151,98 @@ export class UnitDuesService {
     }
   }
 
+  async sendReminder(dueId: string) {
+    const due = await this.prisma.unitDue.findUnique({
+      where: { dueId },
+      select: {
+        dueId: true,
+        amount: true,
+        dueDate: true,
+        status: true,
+        emailNotifiedAt: true,
+        unit: {
+          select: {
+            unitId: true,
+            unitNumber: true,
+          },
+        },
+      },
+    });
+
+    if (!due) {
+      throw new NotFoundException('Unit due not found');
+    }
+
+    if (due.status !== 'UNPAID') {
+      throw new BadRequestException(
+        'Reminder emails can only be sent for unpaid dues',
+      );
+    }
+
+    const today = this.startOfToday();
+    const owners = await this.prisma.unitOwner.findMany({
+      where: {
+        unitId: due.unit.unitId,
+        startDate: { lte: today },
+        OR: [{ endDate: null }, { endDate: { gte: today } }],
+        user: {
+          active: true,
+        },
+      },
+      select: {
+        user: {
+          select: {
+            userId: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: [{ startDate: 'asc' }, { unitOwnerId: 'asc' }],
+    });
+
+    if (owners.length === 0) {
+      throw new BadRequestException(
+        'No active owners are linked to this unit for reminder email delivery',
+      );
+    }
+
+    const formattedAmount = Number(due.amount).toFixed(2);
+    const formattedDueDate = due.dueDate.toISOString().slice(0, 10);
+
+    for (const owner of owners) {
+      const fullName = `${owner.user.firstName} ${owner.user.lastName}`.trim();
+
+      await this.emailService.sendUnpaidDuesReminder(
+        owner.user.email,
+        fullName,
+        due.unit.unitNumber,
+        formattedAmount,
+        formattedDueDate,
+      );
+    }
+
+    const updatedDue = await this.prisma.unitDue.update({
+      where: { dueId },
+      data: {
+        emailNotifiedAt: new Date(),
+        updatedAt: new Date(),
+      },
+      select: safeUnitDueSelect,
+    });
+
+    return {
+      message: 'Reminder email sent successfully',
+      recipients: owners.map((owner) => ({
+        userId: owner.user.userId,
+        email: owner.user.email,
+        name: `${owner.user.firstName} ${owner.user.lastName}`.trim(),
+      })),
+      due: updatedDue,
+    };
+  }
+
   async remove(dueId: string) {
     try {
       await this.prisma.unitDue.delete({ where: { dueId } });
@@ -194,5 +290,11 @@ export class UnitDuesService {
     if (status !== 'PAID' && paidDate) {
       throw new BadRequestException('paidDate is only allowed when status is PAID');
     }
+  }
+
+  private startOfToday() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
   }
 }

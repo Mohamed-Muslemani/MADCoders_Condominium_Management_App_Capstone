@@ -55,6 +55,15 @@ const documentSelect = {
           originalName: true,
           mimeType: true,
           sizeBytes: true,
+          links: {
+            select: {
+              fileLinkId: true,
+              relatedType: true,
+              relatedId: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'asc' as const },
+          },
         },
       },
     },
@@ -81,6 +90,15 @@ const versionSelect = {
       sizeBytes: true,
       sha256Hash: true,
       uploadedAt: true,
+      links: {
+        select: {
+          fileLinkId: true,
+          relatedType: true,
+          relatedId: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' as const },
+      },
     },
   },
   chunks: {
@@ -238,7 +256,7 @@ export class DocumentsService {
           data: { isCurrent: false },
         });
 
-        return tx.documentVersion.create({
+        const createdVersion = await tx.documentVersion.create({
           data: {
             documentId,
             fileId: createdFile.fileId,
@@ -248,6 +266,25 @@ export class DocumentsService {
           },
           select: { versionId: true },
         });
+
+        await tx.fileLink.createMany({
+          data: [
+            {
+              fileId: createdFile.fileId,
+              relatedType: 'DOCUMENT',
+              relatedId: documentId,
+              linkedByUserId: uploadedByUserId,
+            },
+            {
+              fileId: createdFile.fileId,
+              relatedType: 'DOCUMENT_VERSION',
+              relatedId: createdVersion.versionId,
+              linkedByUserId: uploadedByUserId,
+            },
+          ],
+        });
+
+        return createdVersion;
       });
     } catch (error) {
       await this.deleteStoredFile(storedFile.storagePath);
