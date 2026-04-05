@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/auth-provider';
 import { AnnouncementsPage } from '../pages/AnnouncementsPage';
 import { DocumentAiTestPage } from '../pages/DocumentAiTestPage';
 import { LoginPage } from '../pages/LoginPage';

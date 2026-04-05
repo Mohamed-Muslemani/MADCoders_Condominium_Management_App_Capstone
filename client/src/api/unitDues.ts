@@ -2,6 +2,7 @@ import { api } from './client';
 import type { DeleteResponse } from '../types/api';
 import type {
   CreateUnitDueRequest,
+  SendUnitDueReminderResponse,
   UnitDue,
   UpdateUnitDueRequest,
 } from '../types/unit-due';
@@ -28,6 +29,13 @@ export async function createUnitDue(payload: CreateUnitDueRequest) {
 
 export async function updateUnitDue(dueId: string, payload: UpdateUnitDueRequest) {
   const { data } = await api.patch<UnitDue>(`/unit-dues/${dueId}`, payload);
+  return data;
+}
+
+export async function sendUnitDueReminder(dueId: string) {
+  const { data } = await api.post<SendUnitDueReminderResponse>(
+    `/unit-dues/${dueId}/send-reminder`,
+  );
   return data;
 }
 

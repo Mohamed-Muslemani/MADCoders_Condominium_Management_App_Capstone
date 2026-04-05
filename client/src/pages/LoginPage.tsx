@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
 import { LoginForm } from '../components/LoginForm/LoginForm';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-provider';
 
 export function LoginPage() {
   const [error, setError] = useState('');

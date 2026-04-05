@@ -41,3 +41,15 @@ export interface UpdateUnitDueRequest {
   emailNotifiedAt?: string | null;
   paidDate?: string | null;
 }
+
+export interface ReminderRecipient {
+  userId: string;
+  email: string;
+  name: string;
+}
+
+export interface SendUnitDueReminderResponse {
+  message: string;
+  recipients: ReminderRecipient[];
+  due: UnitDue;
+}
