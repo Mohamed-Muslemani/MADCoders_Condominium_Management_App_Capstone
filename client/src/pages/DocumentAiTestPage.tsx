@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react';
 import {
   askDocuments,
   createDocument,
-  generateEmbeddings,
-  listDocuments,
+  generateDocumentEmbeddings,
+  getDocuments,
   uploadDocumentVersion,
-  type AskDocumentsResponse,
-  type DocumentSummary,
-} from '../api';
+} from '../api/documents';
 import { getMe } from '../api/auth';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/auth-provider';
+import type { AskDocumentsResponse, DocumentSummary } from '../types/document';
 import type { User } from '../types/user';
 
 const documentTypes = [
@@ -31,7 +30,6 @@ const initialCreateForm = {
 
 export function DocumentAiTestPage() {
   const { token } = useAuth();
-  const authToken = token ?? '';
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState('');
@@ -80,7 +78,7 @@ export function DocumentAiTestPage() {
     setDocumentsError('');
 
     try {
-      const result = await listDocuments(authToken);
+      const result = await getDocuments();
       setDocuments(result);
 
       if (!selectedDocumentId && result[0]) {
@@ -100,7 +98,7 @@ export function DocumentAiTestPage() {
     setAdminError('');
 
     try {
-      const created = await createDocument(authToken, createForm);
+      const created = await createDocument(createForm);
       setCreateMessage(`Created "${created.title}" (${created.documentId})`);
       setCreateForm(initialCreateForm);
       setSelectedDocumentId(created.documentId);
@@ -131,7 +129,6 @@ export function DocumentAiTestPage() {
 
     try {
       const version = await uploadDocumentVersion(
-        authToken,
         selectedDocumentId,
         selectedFile,
       );
@@ -172,7 +169,7 @@ export function DocumentAiTestPage() {
     setAdminError('');
 
     try {
-      await generateEmbeddings(authToken, versionIdForEmbeddings.trim());
+      await generateDocumentEmbeddings(versionIdForEmbeddings.trim());
       setEmbeddingsMessage(
         `Embeddings request completed for version ${versionIdForEmbeddings.trim()}.`,
       );
@@ -197,7 +194,7 @@ export function DocumentAiTestPage() {
     setAskResult(null);
 
     try {
-      const response = await askDocuments(authToken, question.trim());
+      const response = await askDocuments({ query: question.trim() });
       setAskResult(response);
     } catch (error) {
       setAskError(getErrorMessage(error));

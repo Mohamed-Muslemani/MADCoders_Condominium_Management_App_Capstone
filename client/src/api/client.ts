@@ -9,6 +9,15 @@ export const api = axios.create({
   baseURL,
 });
 
+export function createMultipartFormData(
+  fieldName: string,
+  file: File,
+): FormData {
+  const formData = new FormData();
+  formData.append(fieldName, file);
+  return formData;
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem(TOKEN_KEY);
 
