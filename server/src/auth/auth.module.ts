@@ -7,11 +7,25 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET?.trim();
+
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    return 'dev_secret';
+  }
+
+  throw new Error('JWT_SECRET must be set');
+}
+
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev_secret',
+      secret: getJwtSecret(),
       signOptions: {
         expiresIn: (process.env.JWT_EXPIRES_IN ||
           '7d') as SignOptions['expiresIn'],

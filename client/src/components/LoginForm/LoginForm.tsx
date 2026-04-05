@@ -21,26 +21,19 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
   return (
     /* ── Page ─────────────────────────────────────────────────────────── */
     <div className="relative min-h-screen grid place-items-center p-6 overflow-hidden bg-[#f5f7fb] text-[#0f172a] [font-family:ui-sans-serif,system-ui,-apple-system,'Segoe_UI',Roboto,Helvetica,Arial]">
-
       {/* Blob 1 */}
       <div className="blob-1 pointer-events-none fixed rounded-full z-0 w-[520px] h-[520px] -top-[220px] -left-[210px] opacity-65 [filter:blur(10px)] [background:radial-gradient(circle_at_30%_30%,rgba(37,99,235,.22),rgba(7,26,51,.06),transparent_72%)]" />
-
       {/* Blob 2 */}
       <div className="blob-2 pointer-events-none fixed rounded-full z-0 w-[620px] h-[620px] -bottom-[320px] -right-[320px] opacity-55 [filter:blur(10px)] [background:radial-gradient(circle_at_40%_35%,rgba(11,43,85,.22),rgba(37,99,235,.08),transparent_72%)]" />
-
       {/* Blueprint lines */}
       <div className="pointer-events-none fixed inset-0 z-0 opacity-55 [background:linear-gradient(to_bottom,rgba(11,43,85,.06)_1px,transparent_1px)] [background-size:100%_46px] [transform:rotate(-1.2deg)]" />
-
       {/* ── Card ───────────────────────────────────────────────────────── */}
       <main className="card-accent relative z-10 overflow-hidden w-[min(420px,100%)] bg-white rounded-[26px] p-[18px] border border-[#e5eaf3] [box-shadow:0_18px_50px_rgba(15,23,42,.12)]">
-
         {/* Corner decoration */}
         <div className="absolute pointer-events-none z-0 w-[140px] h-[140px] rounded-[36px] -top-[44px] -right-[44px] rotate-[14deg] border border-[rgba(37,99,235,.18)] [background:radial-gradient(circle_at_30%_30%,rgba(37,99,235,.10),transparent_70%)]" />
-
         {/* ── Brand row ── */}
         <div className="flex items-center justify-between gap-3 mt-[6px]">
           <div className="flex items-center gap-3">
-
             {/* Logo */}
             <div className="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-[16px] border border-[#e5eaf3] bg-white p-[5px] shadow-[0_10px_24px_rgba(15,23,42,.08)]">
   <img
@@ -59,13 +52,11 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
               </span>
             </div>
           </div>
-
           {/* Secure pill */}
           <div className="inline-flex items-center gap-2 select-none whitespace-nowrap px-[10px] py-[8px] rounded-full border border-[#e5eaf3] bg-white text-[#64748b] text-[12px]">
             🔒 Secure
           </div>
         </div>
-
         {/* ── Heading ── */}
         <h1 className="mt-[14px] mb-[4px] text-[20px] font-bold tracking-[-0.03em] text-[#0f172a]">
           Sign in
@@ -75,7 +66,6 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
         </p>
 
         <form onSubmit={handleSubmit}>
-
           {/* ── Email ── */}
           <label htmlFor="email" className="block text-[12px] text-[#64748b] mt-[10px] mb-[6px]">
             Email
@@ -93,7 +83,6 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
               className="condo-input w-full border-0 outline-none text-[14px] bg-transparent text-[#0f172a]"
             />
           </div>
-
           {/* ── Password ── */}
           <label htmlFor="password" className="block text-[12px] text-[#64748b] mt-[10px] mb-[6px]">
             Password
@@ -125,7 +114,6 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
               {error}
             </p>
           )}
-
           {/* ── Submit ── */}
           <button
             type="submit"
@@ -134,7 +122,6 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
-
           {/* ── Help ── */}
           <div className="mt-[12px] border-t border-dashed border-[#e5eaf3] pt-[12px] text-[12px] leading-[1.5] text-[#64748b]">
   Need access?{' '}
