@@ -7,6 +7,11 @@ export async function getUsers() {
   return data;
 }
 
+export async function getCurrentUserProfile() {
+  const { data } = await api.get<User>('/users/me');
+  return data;
+}
+
 export async function getUser(userId: string) {
   const { data } = await api.get<User>(`/users/${userId}`);
   return data;
@@ -19,6 +24,11 @@ export async function createUser(payload: CreateUserRequest) {
 
 export async function updateUser(userId: string, payload: UpdateUserRequest) {
   const { data } = await api.patch<User>(`/users/${userId}`, payload);
+  return data;
+}
+
+export async function updateCurrentUserProfile(payload: UpdateUserRequest) {
+  const { data } = await api.patch<User>('/users/me', payload);
   return data;
 }
 

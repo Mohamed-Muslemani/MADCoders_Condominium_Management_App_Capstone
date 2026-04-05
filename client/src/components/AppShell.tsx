@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/auth-provider';
 import { AppNav } from './AppNav';
 
 export function AppShell() {

@@ -1,13 +1,8 @@
 import type { User } from './user';
+import type { ExpenseCategory } from './expense-category';
 
 export type ReserveTransactionType = 'EXPENSE' | 'PROJECTION';
 export type ReserveTransactionStatus = 'POSTED' | 'PLANNED' | 'CANCELLED';
-
-export interface ExpenseCategory {
-  categoryId: string;
-  name: string;
-  description?: string | null;
-}
 
 export interface ReserveTransaction {
   transactionId: string;
