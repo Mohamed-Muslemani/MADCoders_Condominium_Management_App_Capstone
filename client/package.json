@@ -16,6 +16,7 @@
     "@untitledui/file-icons": "^0.0.9",
     "@untitledui/icons": "^0.0.21",
     "axios": "^1.14.0",
+    "chart.js": "^4.5.1",
     "motion": "^12.38.0",
     "react": "^19.2.0",
     "react-aria": "^3.47.0",

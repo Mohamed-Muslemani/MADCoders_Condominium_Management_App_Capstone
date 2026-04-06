@@ -81,7 +81,7 @@ export function AppShell() {
         </aside>
 
         {/* Main */}
-        <main className="min-w-0 rounded-[16px] border border-[#e5eaf3] bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+        <main className="min-w-0 rounded-[16px] border border-[#e5eaf3] bg-white p-[14px] shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
           <Outlet />
         </main>
 
