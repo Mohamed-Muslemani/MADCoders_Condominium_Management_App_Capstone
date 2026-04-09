@@ -8,15 +8,17 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setToken } = useAuth();
+  const { setSession } = useAuth();
 
   async function handleLogin(values: { email: string; password: string }) {
     try {
       setLoading(true);
       setError('');
       const result = await login(values);
-      setToken(result.accessToken);
-      navigate('/users', { replace: true });
+      setSession(result.accessToken, result.user.role);
+      navigate(result.user.role === 'OWNER' ? '/owner' : '/users', {
+        replace: true,
+      });
     } catch {
       setError('Invalid credentials');
     } finally {

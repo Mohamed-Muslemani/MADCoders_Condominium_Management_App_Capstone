@@ -53,6 +53,26 @@ export async function createMaintenanceRequest(
   return data;
 }
 
+export async function uploadMaintenanceRequestAttachment(
+  requestId: string,
+  file: File,
+) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data } = await api.post(
+    `/maintenance-requests/${requestId}/attachments`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    },
+  );
+
+  return data;
+}
+
 export async function updateMaintenanceRequest(
   requestId: string,
   payload: UpdateMaintenanceRequestRequest,
