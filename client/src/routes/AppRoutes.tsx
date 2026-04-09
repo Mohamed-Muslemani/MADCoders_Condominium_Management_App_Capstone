@@ -5,26 +5,39 @@ import { AnnouncementsPage } from '../pages/AnnouncementsPage';
 import { DocumentAiTestPage } from '../pages/DocumentAiTestPage';
 import { LoginPage } from '../pages/LoginPage';
 import { MaintenanceRequestsPage } from '../pages/MaintenanceRequestsPage';
+import { OwnerDashboardPage } from '../pages/OwnerDashboardPage';
+import { OwnerDocumentsPage } from '../pages/OwnerDocumentsPage';
+import { OwnerDuesPage } from '../pages/OwnerDuesPage';
+import { OwnerMaintenancePage } from '../pages/OwnerMaintenancePage';
 import { ReserveTransactionsPage } from '../pages/ReserveTransactionsPage';
 import { UnitDuesPage } from '../pages/UnitDuesPage';
 import { UnitOwnersPage } from '../pages/UnitOwnersPage';
 import { UnitsPage } from '../pages/UnitsPage';
 import { UsersPage } from '../pages/UsersPage';
+import { OwnerRoute } from './OwnerRoute';
 import { ProtectedRoute } from './ProtectedRoute';
 
 export function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
+  const authenticatedHome = role === 'OWNER' ? '/owner' : '/users';
 
   return (
     <Routes>
       <Route
         path="/login"
         element={
-          isAuthenticated ? <Navigate to="/users" replace /> : <LoginPage />
+          isAuthenticated ? <Navigate to={authenticatedHome} replace /> : <LoginPage />
         }
       />
 
       <Route element={<ProtectedRoute />}>
+        <Route element={<OwnerRoute />}>
+          <Route path="/owner" element={<OwnerDashboardPage />} />
+          <Route path="/owner/dues" element={<OwnerDuesPage />} />
+          <Route path="/owner/maintenance" element={<OwnerMaintenancePage />} />
+          <Route path="/owner/documents" element={<OwnerDocumentsPage />} />
+        </Route>
+
         <Route element={<AppShell />}>
           <Route path="/ai-documents" element={<DocumentAiTestPage />} />
           <Route path="/users" element={<UsersPage />} />
@@ -46,7 +59,7 @@ export function AppRoutes() {
       <Route
         path="*"
         element={
-          <Navigate to={isAuthenticated ? '/users' : '/login'} replace />
+          <Navigate to={isAuthenticated ? authenticatedHome : '/login'} replace />
         }
       />
     </Routes>
