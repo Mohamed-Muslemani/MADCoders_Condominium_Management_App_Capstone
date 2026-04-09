@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/auth-provider';
 import type { OwnerNavBadgeMap, OwnerRouteKey } from '../../types/owner';
 import { ownerRoutePaths } from '../../types/owner';
 
@@ -15,6 +16,14 @@ export function OwnerSidebar({
   activeRoute: OwnerRouteKey;
   badges?: OwnerNavBadgeMap;
 }) {
+  const navigate = useNavigate();
+  const { clearToken } = useAuth();
+
+  function handleLogout() {
+    clearToken();
+    navigate('/login', { replace: true });
+  }
+
   return (
     <aside className="owner-shell-sidebar">
       <nav className="owner-shell-nav">
@@ -47,9 +56,13 @@ export function OwnerSidebar({
         <div className="owner-shell-nav-link">
           Profile
         </div>
-        <div className="owner-shell-nav-link">
+        <button
+          type="button"
+          className="owner-shell-nav-link"
+          onClick={handleLogout}
+        >
           Logout
-        </div>
+        </button>
       </nav>
     </aside>
   );

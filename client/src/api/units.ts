@@ -29,4 +29,4 @@ export async function updateUnit(unitId: string, payload: UpdateUnitRequest) {
 export async function deleteUnit(unitId: string) {
   const { data } = await api.delete<DeleteResponse>(`/units/${unitId}`);
   return data;
-}
+} 

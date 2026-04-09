@@ -8,7 +8,11 @@ import {
 } from '../api/documents';
 import { getMe } from '../api/auth';
 import { useAuth } from '../context/auth-provider';
-import type { AskDocumentsResponse, DocumentSummary } from '../types/document';
+import type {
+  AskDocumentsResponse,
+  CreateDocumentRequest,
+  DocumentSummary,
+} from '../types/document';
 import type { User } from '../types/user';
 
 const documentTypes = [
@@ -20,7 +24,7 @@ const documentTypes = [
 
 const visibilityOptions = ['PUBLIC', 'OWNERS_ONLY', 'BOARD_ONLY'] as const;
 
-const initialCreateForm = {
+const initialCreateForm: CreateDocumentRequest = {
   title: '',
   docType: 'CONDO_DOC',
   visibility: 'OWNERS_ONLY',
@@ -477,7 +481,10 @@ export function DocumentAiTestPage() {
   );
 }
 
-function formatPageRange(pageStart: number | null, pageEnd: number | null) {
+function formatPageRange(
+  pageStart?: number | null,
+  pageEnd?: number | null,
+) {
   if (pageStart === null && pageEnd === null) {
     return 'unknown';
   }
