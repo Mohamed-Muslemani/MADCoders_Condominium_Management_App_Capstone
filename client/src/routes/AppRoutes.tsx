@@ -5,9 +5,9 @@ import { AnnouncementsPage } from '../pages/AnnouncementsPage';
 import { DashboardPage } from '../pages/DashboardPage/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
 import { MaintenanceRequestsPage } from '../pages/MaintenanceRequestsPage';
-import { ReserveTransactionsPage } from '../pages/ReserveTransactionsPage';
-import { UnitDuesPage } from '../pages/UnitDuesPage';
-import { UnitOwnersPage } from '../pages/UnitOwnersPage';
+import { ReserveTransactionsPage } from '../pages/ReserveTransactionsPage/ReserveTransactionsPage';
+import { UnitDuesPage } from '../pages/UnitDuesPage/UnitDuesPage';
+import { UnitOwnersPage } from '../pages/UnitOwnersPage/UnitOwnersPage';
 import { UnitsPage } from '../pages/UnitsPage/UnitsPage';
 import { UsersPage } from '../pages/UsersPage';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -31,7 +31,7 @@ export function AppRoutes() {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/units" element={<UnitsPage />} />
           <Route path="/unit-owners" element={<UnitOwnersPage />} />
-          <Route path="/unit-dues" element={<UnitDuesPage />} />
+          {/* <Route path="/unit-dues" element={<UnitDuesPage />} /> */}
           <Route path="/announcements" element={<AnnouncementsPage />} />
           <Route path="/maintenance-requests" element={<MaintenanceRequestsPage />} />
           <Route path="/reserve-transactions" element={<ReserveTransactionsPage />} />

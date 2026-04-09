@@ -105,12 +105,9 @@ export function AppNav() {
           <Divider />
 
           <SidebarLink to="/unit-dues" label="Payments" onClick={closeMenu} />
-          <SidebarLink to="/expenses" label="Expenses" onClick={closeMenu} />
-          <SidebarLink
-            to="/reserve-transactions"
-            label="Funds"
-            onClick={closeMenu}
-          />
+          <SidebarLink to="/reserve-transactions" label="Expenses" onClick={closeMenu} />
+          
+     
 
           <Divider />
 

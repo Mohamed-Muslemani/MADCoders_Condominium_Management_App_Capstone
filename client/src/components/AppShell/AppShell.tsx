@@ -73,8 +73,7 @@ export function AppShell() {
       </header>
 
       {/* BODY */}
-      <div className="app-body mx-auto grid max-w-[1200px] grid-cols-[270px_1fr] gap-[14px] p-[18px]">
-
+      <div className="app-body">
         {/* Sidebar */}
         <aside className="min-w-0">
           <AppNav />
