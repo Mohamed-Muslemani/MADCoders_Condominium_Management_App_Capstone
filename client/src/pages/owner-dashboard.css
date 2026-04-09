@@ -1,0 +1,233 @@
+.owner-dashboard-page {
+  color: #0f172a;
+}
+
+.owner-dashboard-header {
+  padding: 16px;
+  border-bottom: 1px solid #e5eaf3;
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.owner-dashboard-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+}
+
+.owner-dashboard-who-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid #e5eaf3;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  font-weight: 950;
+  color: #0b2b55;
+  font-size: 16px;
+}
+
+.owner-dashboard-who h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.owner-dashboard-who p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.owner-dashboard-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.owner-dashboard-grid {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.owner-dashboard-full {
+  padding: 0 14px 14px;
+}
+
+.owner-dashboard-card {
+  border: 1px solid #e5eaf3;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.owner-dashboard-card-head {
+  padding: 12px;
+  border-bottom: 1px solid #e5eaf3;
+  background: linear-gradient(180deg, #fff, #fbfcff);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.owner-dashboard-card-head strong {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.owner-dashboard-card-body {
+  padding: 12px;
+}
+
+.owner-dashboard-hero-box {
+  border: 1px solid #e5eaf3;
+  border-radius: 18px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff, #fbfcff);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.owner-dashboard-hero-box small {
+  display: block;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.owner-dashboard-balance {
+  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.owner-dashboard-hero-sub {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.owner-dashboard-stats {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.owner-dashboard-stat,
+.owner-dashboard-kv {
+  border: 1px solid #e5eaf3;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  padding: 10px 12px;
+}
+
+.owner-dashboard-stat small,
+.owner-dashboard-kv small {
+  display: block;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.owner-dashboard-stat strong,
+.owner-dashboard-kv strong {
+  display: block;
+  margin-top: 6px;
+  font-weight: 950;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.owner-dashboard-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.owner-dashboard-feed-item {
+  border: 1px solid #e5eaf3;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.owner-dashboard-feed-item strong {
+  font-weight: 950;
+}
+
+.owner-dashboard-feed-item span.feed-copy {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-weight: 850;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.owner-dashboard-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.owner-dashboard-note {
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .owner-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-dashboard-kv-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .owner-dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .owner-dashboard-who {
+    min-width: unset;
+  }
+
+  .owner-dashboard-kv-grid {
+    grid-template-columns: 1fr;
+  }
+}

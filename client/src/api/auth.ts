@@ -26,3 +26,7 @@ export async function getMe() {
   const { data } = await api.get<User>('/auth/me');
   return data;
 }
+
+export async function getCurrentUser() {
+  return getMe();
+}

@@ -48,6 +48,12 @@ export class UnitDuesController {
   }
 
   @Roles('ADMIN')
+  @Post(':id/send-reminder')
+  async sendReminder(@Param('id') id: string) {
+    return this.unitDuesService.sendReminder(id);
+  }
+
+  @Roles('ADMIN')
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.unitDuesService.remove(id);

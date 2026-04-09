@@ -143,6 +143,7 @@ export class ReserveTransactionsService {
 
   async create(createdByUserId: string, dto: CreateReserveTransactionDto) {
     this.validateDates(dto.transactionDate, dto.expectedDate);
+    await this.ensureCategoryExists(dto.categoryId);
 
     try {
       return await this.prisma.reserveTransaction.create({
@@ -198,6 +199,7 @@ export class ReserveTransactionsService {
       nextTransactionDate ? nextTransactionDate.toISOString() : undefined,
       nextExpectedDate ? nextExpectedDate.toISOString() : undefined,
     );
+    await this.ensureCategoryExists(dto.categoryId ?? undefined);
 
     try {
       const data: Prisma.ReserveTransactionUpdateInput = {
@@ -299,6 +301,21 @@ export class ReserveTransactionsService {
       throw new BadRequestException(
         'transactionDate cannot be after expectedDate',
       );
+    }
+  }
+
+  private async ensureCategoryExists(categoryId?: string | null) {
+    if (!categoryId) {
+      return;
+    }
+
+    const category = await this.prisma.expenseCategory.findUnique({
+      where: { categoryId },
+      select: { categoryId: true },
+    });
+
+    if (!category) {
+      throw new BadRequestException('Invalid categoryId');
     }
   }
 

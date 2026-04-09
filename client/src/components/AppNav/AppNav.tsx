@@ -2,6 +2,18 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import './AppNav.css';
 
+const adminLinks = [
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/users', label: 'Users' },
+  { to: '/units', label: 'Units' },
+  { to: '/unit-owners', label: 'Owners' },
+  { to: '/unit-dues', label: 'Payments' },
+  { to: '/reserve-transactions', label: 'Expenses' },
+  { to: '/maintenance-requests', label: 'Maintenance' },
+  { to: '/announcements', label: 'Announcements' },
+  { to: '/ai-documents', label: 'AI Documents' },
+] as const;
+
 function Divider() {
   return <div className="nav-divider" />;
 }
@@ -9,12 +21,10 @@ function Divider() {
 function SidebarLink({
   to,
   label,
-  badge,
   onClick,
 }: {
   to: string;
   label: string;
-  badge?: string;
   onClick?: () => void;
 }) {
   return (
@@ -24,7 +34,6 @@ function SidebarLink({
       className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
     >
       <span>{label}</span>
-      {badge ? <span className="nav-badge">{badge}</span> : null}
     </NavLink>
   );
 }
@@ -40,9 +49,12 @@ export function AppNav() {
     setOpen((prev) => !prev);
   }
 
+  const primaryLinks = adminLinks.slice(0, 4);
+  const operationsLinks = adminLinks.slice(4, 7);
+  const resourcesLinks = adminLinks.slice(7);
+
   return (
     <>
-      {/* mobile top trigger */}
       <div className="mobile-nav-trigger">
         <button
           type="button"
@@ -59,23 +71,21 @@ export function AppNav() {
         </div>
       </div>
 
-      {/* overlay */}
       <div
         className={`sidebar-overlay ${open ? 'open' : ''}`}
         onClick={closeMenu}
       />
 
-      {/* sidebar / drawer */}
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="mobile-drawer-head">
           <div className="mobile-drawer-brand">
-          <div className="mobile-drawer-logo overflow-hidden">
-  <img
-    src="/CMLogo.png"
-    alt="CondoManager logo"
-    className="h-full w-full object-cover"
-  />
-</div>
+            <div className="mobile-drawer-logo overflow-hidden">
+              <img
+                src="/CMLogo.png"
+                alt="CondoManager logo"
+                className="h-full w-full object-cover"
+              />
+            </div>
             <div>
               <strong>CondoManager</strong>
               <span>Admin Portal</span>
@@ -93,42 +103,36 @@ export function AppNav() {
         </div>
 
         <nav className="sidebar-nav">
-          <SidebarLink to="/dashboard" label="Dashboard" onClick={closeMenu} />
-          <SidebarLink to="/units" label="Units" badge="124" onClick={closeMenu} />
-          <SidebarLink
-            to="/unit-owners"
-            label="Owners"
-            badge="206"
-            onClick={closeMenu}
-          />
+          {primaryLinks.map((link) => (
+            <SidebarLink
+              key={link.to}
+              to={link.to}
+              label={link.label}
+              onClick={closeMenu}
+            />
+          ))}
 
           <Divider />
 
-          <SidebarLink to="/unit-dues" label="Payments" onClick={closeMenu} />
-          <SidebarLink to="/reserve-transactions" label="Expenses" onClick={closeMenu} />
-          
-     
+          {operationsLinks.map((link) => (
+            <SidebarLink
+              key={link.to}
+              to={link.to}
+              label={link.label}
+              onClick={closeMenu}
+            />
+          ))}
 
           <Divider />
 
-          <SidebarLink
-            to="/maintenance-requests"
-            label="Maintenance"
-            badge="3"
-            onClick={closeMenu}
-          />
-          <SidebarLink
-            to="/announcements"
-            label="Announcements"
-            badge="3"
-            onClick={closeMenu}
-          />
-
-          <Divider />
-
-          <SidebarLink to="/documents" label="Documents" onClick={closeMenu} />
-          <SidebarLink to="/reports" label="Reports" onClick={closeMenu} />
-         
+          {resourcesLinks.map((link) => (
+            <SidebarLink
+              key={link.to}
+              to={link.to}
+              label={link.label}
+              onClick={closeMenu}
+            />
+          ))}
         </nav>
       </aside>
     </>
