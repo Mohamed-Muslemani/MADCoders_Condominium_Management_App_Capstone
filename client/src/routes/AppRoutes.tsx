@@ -1,11 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '../components/AppShell/AppShell';
 import { useAuth } from '../context/auth-provider';
-import { AnnouncementsPage } from '../pages/AnnouncementsPage';
+import { AnnouncementsPage } from '../pages/AnnouncementsPage/AnnouncementsPage';
 import { DashboardPage } from '../pages/DashboardPage/DashboardPage';
-import { DocumentAiTestPage } from '../pages/DocumentAiTestPage';
+import { DocumentsPage } from '../pages/DocumentsPage/DocumentAiTestPage';
 import { LoginPage } from '../pages/LoginPage';
-import { MaintenanceRequestsPage } from '../pages/MaintenanceRequestsPage';
+import { MaintenanceRequestsPage } from '../pages/MaintenanceRequestsPage/MaintenanceRequestsPage';
 import { OwnerDashboardPage } from '../pages/OwnerDashboardPage';
 import { OwnerDocumentsPage } from '../pages/OwnerDocumentsPage';
 import { OwnerDuesPage } from '../pages/OwnerDuesPage';
@@ -42,7 +42,7 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/ai-documents" element={<DocumentAiTestPage />} />
+          <Route path="/ai-documents" element={<DocumentsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/units" element={<UnitsPage />} />
           <Route path="/unit-owners" element={<UnitOwnersPage />} />
