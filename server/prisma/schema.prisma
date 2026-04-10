@@ -88,19 +88,19 @@ model DuesImportLine {
   importLineId  String           @id @default(uuid()) @map("import_line_id")
   importBatchId String           @map("import_batch_id")
   rowNumber     Int              @map("row_number")
-  sourceUnitId  String?          @map("source_unit_id")
   unitId        String?          @map("unit_id")
-  periodMonth   DateTime?        @map("period_month") @db.Date
-  dueDate       DateTime?        @map("due_date") @db.Date
-  paidDate      DateTime?        @map("paid_date") @db.Date
   amount        Decimal?         @db.Decimal(10, 2)
   status        DueStatus?
   note          String?
+  createdAt     DateTime         @default(now()) @map("created_at")
+  sourceUnitId  String?          @map("source_unit_id")
+  periodMonth   DateTime?        @map("period_month") @db.Date
+  dueDate       DateTime?        @map("due_date") @db.Date
+  paidDate      DateTime?        @map("paid_date") @db.Date
   rowStatus     ImportLineStatus @default(PENDING) @map("row_status")
   errorReason   String?          @map("error_reason")
-  createdAt     DateTime         @default(now()) @map("created_at")
   batch         DuesImportBatch  @relation(fields: [importBatchId], references: [importBatchId], onDelete: Cascade)
-  unit          Unit?            @relation(fields: [unitId], references: [unitId])
+  unit          Unit?            @relation(fields: [unitId], references: [unitId], onDelete: Restrict)
   dues          UnitDue[]
 
   @@index([importBatchId])
@@ -113,8 +113,6 @@ model UnitDue {
   dueId           String           @id @default(uuid()) @map("due_id")
   unitId          String           @map("unit_id")
   periodMonth     DateTime         @map("period_month") @db.Date
-  dueDate         DateTime         @map("due_date") @db.Date
-  paidDate        DateTime?        @map("paid_date") @db.Date
   amount          Decimal          @db.Decimal(10, 2)
   status          DueStatus
   updatedByUserId String?          @map("updated_by_user_id")
@@ -124,6 +122,8 @@ model UnitDue {
   importBatchId   String?          @map("import_batch_id")
   importLineId    String?          @map("import_line_id")
   createdAt       DateTime         @default(now()) @map("created_at")
+  dueDate         DateTime         @map("due_date") @db.Date
+  paidDate        DateTime?        @map("paid_date") @db.Date
   importBatch     DuesImportBatch? @relation(fields: [importBatchId], references: [importBatchId])
   importLine      DuesImportLine?  @relation(fields: [importLineId], references: [importLineId])
   unit            Unit             @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
@@ -170,7 +170,6 @@ model ReserveTransaction {
 
 model MaintenanceRequest {
   requestId         String              @id @default(uuid()) @map("request_id")
-  scope             MaintenanceScope    @default(UNIT)
   unitId            String?             @map("unit_id")
   submittedByUserId String              @map("submitted_by_user_id")
   title             String
@@ -180,6 +179,7 @@ model MaintenanceRequest {
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @map("updated_at")
   closedAt          DateTime?           @map("closed_at")
+  scope             MaintenanceScope    @default(UNIT)
   submittedBy       User                @relation("MaintenanceSubmittedBy", fields: [submittedByUserId], references: [userId])
   unit              Unit?               @relation(fields: [unitId], references: [unitId], onDelete: Cascade)
 
@@ -299,12 +299,12 @@ model DocumentChunk {
 }
 
 model DocumentEmbedding {
-  embeddingId String        @id @default(uuid()) @map("embedding_id")
-  chunkId     String        @unique @map("chunk_id")
-  modelName   String        @map("model_name")
+  embeddingId String                @id @default(uuid()) @map("embedding_id")
+  chunkId     String                @unique @map("chunk_id")
+  modelName   String                @map("model_name")
+  createdAt   DateTime              @default(now()) @map("created_at")
   embedding   Unsupported("vector") @map("embedding")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  chunk       DocumentChunk @relation(fields: [chunkId], references: [chunkId], onDelete: Cascade)
+  chunk       DocumentChunk         @relation(fields: [chunkId], references: [chunkId], onDelete: Cascade)
 
   @@map("DOCUMENT_EMBEDDINGS")
 }
@@ -417,8 +417,8 @@ enum FileRelatedType {
   MAINTENANCE_REQUEST
   UNIT_DUE
   DUES_IMPORT_BATCH
-  DOCUMENT
   DOCUMENT_VERSION
+  DOCUMENT
   MEETING
   MEETING_MINUTES
 }
