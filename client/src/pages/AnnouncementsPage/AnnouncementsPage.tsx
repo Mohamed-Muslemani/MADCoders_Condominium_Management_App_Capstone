@@ -404,7 +404,6 @@ export function AnnouncementsPage() {
                 </div>
               </div>
 
-              {/* Building badge placeholder — shows first letter of status */}
               <div className="building-badge">
                 <span className="b-dot" />
                 {a.status.slice(0, 1)}

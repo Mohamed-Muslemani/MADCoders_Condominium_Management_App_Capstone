@@ -6,32 +6,15 @@ import {
   createReserveTransaction,
   updateReserveTransaction,
   deleteReserveTransaction,
+  deleteReserveTransactionReceipt,
+  downloadReserveTransactionReceipt,
+  uploadReserveTransactionReceipt,
 } from '../../api/reserveTransactions';
 import type {
   ReserveTransaction,
   CreateReserveTransactionRequest,
   UpdateReserveTransactionRequest,
 } from '../../types/reserve-transaction';
-
-/* ── localStorage receipt helpers ── */
-const RECEIPT_KEY = (id: string) => `receipt_${id}`;
-function saveReceipt(id: string, base64: string) {
-  try { localStorage.setItem(RECEIPT_KEY(id), base64); } catch {}
-}
-function loadReceipt(id: string): string | null {
-  try { return localStorage.getItem(RECEIPT_KEY(id)); } catch { return null; }
-}
-function removeReceipt(id: string) {
-  try { localStorage.removeItem(RECEIPT_KEY(id)); } catch {}
-}
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload  = () => res(reader.result as string);
-    reader.onerror = () => rej(new Error('Read failed'));
-    reader.readAsDataURL(file);
-  });
-}
 
 /* ── Lightbox ── */
 function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
@@ -51,7 +34,7 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
 /* ── Expense Drawer ── */
 function ExpenseDrawer({
   mode, transaction, saving, toast,
-  onClose, onSave, onDelete,
+  onClose, onSave, onDelete, onReceiptAction,
 }: {
   mode: 'create' | 'edit';
   transaction: ReserveTransaction | null;
@@ -60,16 +43,18 @@ function ExpenseDrawer({
   onClose: () => void;
   onSave: (
     p: CreateReserveTransactionRequest | UpdateReserveTransactionRequest,
-    receipt: string | null
+    receipt: File | null
   ) => void;
   onDelete: () => void;
+  onReceiptAction: (action: 'open' | 'download' | 'remove') => void;
 }) {
   const [title,         setTitle]         = useState('');
   const [description,   setDescription]   = useState('');
   const [amount,        setAmount]        = useState('');
   const [date,          setDate]          = useState('');
   const [errors,        setErrors]        = useState<Record<string, string>>({});
-  const [receiptBase64, setReceiptBase64] = useState<string | null>(null);
+  const [receiptFile,   setReceiptFile]   = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [lightbox,      setLightbox]      = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -81,14 +66,22 @@ function ExpenseDrawer({
       setDescription(transaction.description ?? '');
       setAmount(String(transaction.amount));
       setDate(transaction.transactionDate?.slice(0, 10) ?? '');
-      setReceiptBase64(loadReceipt(transaction.transactionId));
     } else {
       setTitle(''); setDescription(''); setAmount('');
       setDate(new Date().toISOString().slice(0, 10));
-      setReceiptBase64(null);
     }
+    setReceiptFile(null);
+    setReceiptPreviewUrl(null);
     setErrors({});
   }, [mode, transaction?.transactionId]);
+
+  useEffect(() => {
+    return () => {
+      if (receiptPreviewUrl) {
+        URL.revokeObjectURL(receiptPreviewUrl);
+      }
+    };
+  }, [receiptPreviewUrl]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -99,8 +92,11 @@ function ExpenseDrawer({
     if (file.size > 5 * 1024 * 1024) {
       setErrors(er => ({ ...er, receipt: 'Max 5MB.' })); return;
     }
-    const b64 = await fileToBase64(file);
-    setReceiptBase64(b64);
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl);
+    }
+    setReceiptFile(file);
+    setReceiptPreviewUrl(URL.createObjectURL(file));
     setErrors(er => { const n = { ...er }; delete n.receipt; return n; });
   }
 
@@ -131,7 +127,7 @@ function ExpenseDrawer({
           status: 'POSTED' as const,
           transactionDate: date,
         } as CreateReserveTransactionRequest;
-    onSave(payload, receiptBase64);
+    onSave(payload, receiptFile);
   }
 
   const fmt = (n: string | number) =>
@@ -139,8 +135,8 @@ function ExpenseDrawer({
 
   return (
     <>
-      {lightbox && receiptBase64 && (
-        <Lightbox src={receiptBase64} onClose={() => setLightbox(false)} />
+      {lightbox && receiptPreviewUrl && (
+        <Lightbox src={receiptPreviewUrl} onClose={() => setLightbox(false)} />
       )}
 
       <div
@@ -182,15 +178,40 @@ function ExpenseDrawer({
                 </div>
               </div>
 
-              {receiptBase64 ? (
+              {receiptPreviewUrl ? (
                 <>
                   <div className="receipt-preview">
-                    <img src={receiptBase64} alt="Receipt" />
+                    <img src={receiptPreviewUrl} alt="Receipt preview" />
                   </div>
                   <div className="receipt-actions mt-[10px]">
                     <button className="btn-small" onClick={() => setLightbox(true)}>View</button>
                     <button className="btn-small" onClick={() => fileRef.current?.click()}>Replace</button>
-                    <button className="btn-small danger" onClick={() => setReceiptBase64(null)}>Remove</button>
+                    <button
+                      className="btn-small danger"
+                      onClick={() => {
+                        if (receiptPreviewUrl) {
+                          URL.revokeObjectURL(receiptPreviewUrl);
+                        }
+                        setReceiptFile(null);
+                        setReceiptPreviewUrl(null);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </>
+              ) : isEdit && transaction?.receiptFile ? (
+                <>
+                  <div className="receipt-upload-area">
+                    <span className="upload-icon">🧾</span>
+                    <strong>{transaction.receiptFile.originalName}</strong>
+                    <span>Stored on the server and available to your team.</span>
+                  </div>
+                  <div className="receipt-actions mt-[10px]">
+                    <button className="btn-small" onClick={() => onReceiptAction('open')}>Open</button>
+                    <button className="btn-small" onClick={() => onReceiptAction('download')}>Download</button>
+                    <button className="btn-small" onClick={() => fileRef.current?.click()}>Replace</button>
+                    <button className="btn-small danger" onClick={() => onReceiptAction('remove')}>Remove</button>
                   </div>
                 </>
               ) : (
@@ -212,7 +233,7 @@ function ExpenseDrawer({
               />
 
               <p className="receipt-tip mt-[10px]">
-                💡 Tip: later you can upload to server and store the file path in DB.
+                Receipts are stored on the server and linked to each expense.
               </p>
             </div>
 
@@ -363,7 +384,7 @@ export function ReserveTransactionsPage() {
 
   async function handleSave(
     payload: CreateReserveTransactionRequest | UpdateReserveTransactionRequest,
-    receipt: string | null,
+    receipt: File | null,
   ) {
     try {
       setSaving(true);
@@ -371,15 +392,18 @@ export function ReserveTransactionsPage() {
         const created = await createReserveTransaction(
           payload as CreateReserveTransactionRequest
         );
-        if (receipt) saveReceipt(created.transactionId, receipt);
+        if (receipt) {
+          await uploadReserveTransactionReceipt(created.transactionId, receipt);
+        }
         showToast('Expense added.');
       } else if (active) {
         await updateReserveTransaction(
           active.transactionId,
           payload as UpdateReserveTransactionRequest
         );
-        if (receipt) saveReceipt(active.transactionId, receipt);
-        else removeReceipt(active.transactionId);
+        if (receipt) {
+          await uploadReserveTransactionReceipt(active.transactionId, receipt);
+        }
         showToast('Changes saved.');
       }
       closeDrawer();
@@ -393,11 +417,49 @@ export function ReserveTransactionsPage() {
     if (!window.confirm('Delete this expense? Cannot be undone.')) return;
     try {
       await deleteReserveTransaction(active.transactionId);
-      removeReceipt(active.transactionId);
       closeDrawer();
       await fetchAll();
       showToast('Expense deleted.');
     } catch { showToast('Could not delete.'); }
+  }
+
+  async function handleReceiptAction(action: 'open' | 'download' | 'remove') {
+    if (!active) {
+      return;
+    }
+
+    try {
+      if (action === 'remove') {
+        const updated = await deleteReserveTransactionReceipt(active.transactionId);
+        setActive(updated);
+        await fetchAll();
+        showToast('Receipt removed.');
+        return;
+      }
+
+      const { blob, filename } = await downloadReserveTransactionReceipt(
+        active.transactionId,
+      );
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (action === 'open') {
+        window.open(objectUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        return;
+      }
+
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      showToast(
+        action === 'remove'
+          ? 'Could not remove receipt.'
+          : 'Could not access receipt.',
+      );
+    }
   }
 
   function exportCSV() {
@@ -409,7 +471,7 @@ export function ReserveTransactionsPage() {
         `"${t.description ?? ''}"`,
         t.amount,
         t.transactionDate?.slice(0, 10) ?? '',
-        loadReceipt(t.transactionId) ? 'yes' : 'no',
+        t.receiptFile ? 'yes' : 'no',
       ].join(',')
     );
     const a = document.createElement('a');
@@ -438,7 +500,7 @@ export function ReserveTransactionsPage() {
               Expenses (Receipt Gallery)
             </h2>
             <p className="m-0 mt-[6px] text-[13px] leading-[1.35] text-[#64748b]">
-              Upload a receipt image and preview it instantly. Click a row to edit + view receipt.
+              Track posted expenses and keep each receipt stored with the expense record.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-[10px]">
@@ -505,11 +567,10 @@ export function ReserveTransactionsPage() {
       ) : (
         <div className="exp-list">
           {pageItems.map(t => {
-            const receipt = loadReceipt(t.transactionId);
             return (
               <button key={t.transactionId} className="exp-row" onClick={() => openEdit(t)}>
-                <div className={`exp-thumb ${receipt ? '' : 'no-receipt'}`}>
-                  {receipt ? <img src={receipt} alt="Receipt" /> : 'No receipt'}
+                <div className={`exp-thumb ${t.receiptFile ? '' : 'no-receipt'}`}>
+                  {t.receiptFile ? 'Stored receipt' : 'No receipt'}
                 </div>
                 <div className="exp-content">
                   <div className="exp-title">{t.title}</div>
@@ -517,7 +578,7 @@ export function ReserveTransactionsPage() {
                   <div className="exp-chips">
                     <span className="exp-chip amount">${fmt(t.amount)}</span>
                     <span className="exp-chip date">🗓 {t.transactionDate?.slice(0, 10) ?? '—'}</span>
-                    {receipt
+                    {t.receiptFile
                       ? <span className="exp-chip receipt-yes">🧾 Receipt</span>
                       : <span className="exp-chip no-receipt">— No receipt</span>}
                   </div>
@@ -567,6 +628,7 @@ export function ReserveTransactionsPage() {
           onClose={closeDrawer}
           onSave={handleSave}
           onDelete={handleDelete}
+          onReceiptAction={handleReceiptAction}
         />
       )}
     </>

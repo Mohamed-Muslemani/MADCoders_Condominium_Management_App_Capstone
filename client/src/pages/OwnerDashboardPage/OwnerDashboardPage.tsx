@@ -78,11 +78,14 @@ export function OwnerDashboardPage() {
   const navBadges: OwnerNavBadgeMap = useMemo(
     () => ({
       dashboard: 'Home',
+      dues: state?.duesSummary.unpaidCount
+        ? `${state.duesSummary.unpaidCount} unpaid`
+        : 'Up to date',
       maintenance:
         openMaintenanceCount > 0 ? `${openMaintenanceCount} open` : '0 open',
-      documents: 'Owners',
+      documents: `${state?.documentsSummary.availableCount ?? 0} docs`,
     }),
-    [openMaintenanceCount],
+    [openMaintenanceCount, state],
   );
 
   if (loading) {
@@ -109,17 +112,17 @@ export function OwnerDashboardPage() {
             description={error || 'Your owner profile could not be loaded.'}
             action={
               <div className="flex flex-wrap gap-2">
-                <div onClick={() => void loadDashboard()}>
-                  <OwnerActionButton>Try again</OwnerActionButton>
-                </div>
-                <div
+                <OwnerActionButton onClick={() => void loadDashboard()}>
+                  Try again
+                </OwnerActionButton>
+                <OwnerActionButton
                   onClick={() => {
                     clearToken();
                     navigate('/login', { replace: true });
                   }}
                 >
-                  <OwnerActionButton>Sign out</OwnerActionButton>
-                </div>
+                  Sign out
+                </OwnerActionButton>
               </div>
             }
           />
@@ -197,7 +200,7 @@ export function OwnerDashboardPage() {
               ) : (
                 <>
                   Account <b>{formatRelativeRole(user.role)}</b> • Email{' '}
-                  <b>{user.email}</b> • Unit <b>Pending backend mapping</b>
+                  <b>{user.email}</b> • Unit <b>Not assigned yet</b>
                 </>
               )}
             </p>
@@ -251,7 +254,7 @@ export function OwnerDashboardPage() {
                     Monthly fee • Next due {formatDate(duesSummary.nextDueDate ?? null)}
                   </>
                 ) : (
-                  'We need an owner-safe unit lookup endpoint before the dashboard can derive your dues summary.'
+                  'Your unit details will appear here once an active ownership is assigned to your account.'
                 )}
               </div>
             </div>
@@ -342,8 +345,8 @@ export function OwnerDashboardPage() {
             <strong>
               Unit Details
             </strong>
-            <OwnerActionButton onClick={() => void loadDashboard()}>
-              Update
+            <OwnerActionButton onClick={() => navigate('/owner/profile')}>
+              Edit Profile
             </OwnerActionButton>
           </div>
 
@@ -447,21 +450,6 @@ export function OwnerDashboardPage() {
                   {activeUnit?.notes || 'No notes'}
                 </strong>
               </div>
-            </div>
-
-            <div className="owner-dashboard-note">
-              <OwnerViewState
-                title={
-                  activeUnit
-                    ? 'Dashboard now uses real owner unit and dues data'
-                    : 'Owner unit mapping is still missing for this account'
-                }
-                description={
-                  activeUnit
-                    ? 'This section is now backed by the signed-in owner’s active ownership record, current unit details, and real dues summary.'
-                    : 'This account does not currently resolve to an active unit ownership record, so unit and dues fields remain unavailable.'
-                }
-              />
             </div>
           </div>
         </section>

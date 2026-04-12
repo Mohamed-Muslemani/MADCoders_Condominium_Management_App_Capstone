@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DocumentsQaService } from '../documents/documents.qa.service';
 
 const safeUserSelect = {
   userId: true,
@@ -119,7 +120,10 @@ const safeOwnerDocumentSelect = {
 
 @Injectable()
 export class OwnerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly documentsQaService: DocumentsQaService,
+  ) {}
 
   async getDashboard(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -187,11 +191,22 @@ export class OwnerService {
       take: 3,
     });
 
+    const availableDocumentCount = await this.prisma.document.count({
+      where: {
+        visibility: {
+          in: ['PUBLIC', 'OWNERS_ONLY'],
+        },
+      },
+    });
+
     return {
       profile: user,
       activeOwnership,
       dues,
       duesSummary: this.buildDuesSummary(activeOwnership, dues),
+      documentsSummary: {
+        availableCount: availableDocumentCount,
+      },
       announcements,
       maintenance,
     };
@@ -209,6 +224,10 @@ export class OwnerService {
     });
 
     return this.serializeBigInt(documents);
+  }
+
+  async askDocuments(query: string) {
+    return this.documentsQaService.askOwnerAccessible(query);
   }
 
   private buildDuesSummary(
@@ -229,10 +248,13 @@ export class OwnerService {
       0,
     );
 
-    const nextDue =
-      unpaidDues.find((due) => due.dueDate >= this.startOfToday()) ??
-      unpaidDues[0] ??
-      null;
+    const latestDueDate =
+      dues.length > 0
+        ? dues.reduce(
+            (latest, due) => (due.dueDate > latest ? due.dueDate : latest),
+            dues[0].dueDate,
+          )
+        : null;
 
     return {
       currentBalance,
@@ -240,9 +262,17 @@ export class OwnerService {
       monthlyFee: activeOwnership
         ? Number(activeOwnership.unit.monthlyFee)
         : null,
-      nextDueDate: nextDue?.dueDate ?? null,
+      nextDueDate: latestDueDate
+        ? this.addMonth(latestDueDate)
+        : null,
       unpaidCount: unpaidDues.length,
     };
+  }
+
+  private addMonth(value: Date) {
+    const next = new Date(value);
+    next.setMonth(next.getMonth() + 1);
+    return next;
   }
 
   private startOfToday() {

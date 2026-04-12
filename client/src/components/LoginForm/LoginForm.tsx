@@ -11,6 +11,7 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
   const [email, setEmail]               = useState('');
   const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const contactAdminUrl = import.meta.env.VITE_CONTACT_ADMIN_URL?.trim() || '';
 
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -123,16 +124,19 @@ export function LoginForm({ loading, error, onSubmit }: LoginFormProps) {
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
           {/* ── Help ── */}
-          <div className="mt-[12px] border-t border-dashed border-[#e5eaf3] pt-[12px] text-[12px] leading-[1.5] text-[#64748b]">
-  Need access?{' '}
-  <a
-    href="#"
-    onClick={(e) => e.preventDefault()}
-    className="text-[12px] font-[900] text-[#1d4ed8] no-underline hover:underline"
-  >
-    Contact administrator
-  </a>
-</div>
+          {contactAdminUrl ? (
+            <div className="mt-[12px] border-t border-dashed border-[#e5eaf3] pt-[12px] text-[12px] leading-[1.5] text-[#64748b]">
+              Need access?{' '}
+              <a
+                href={contactAdminUrl}
+                target={contactAdminUrl.startsWith('http') ? '_blank' : undefined}
+                rel={contactAdminUrl.startsWith('http') ? 'noreferrer' : undefined}
+                className="text-[12px] font-[900] text-[#1d4ed8] no-underline hover:underline"
+              >
+                Contact administrator
+              </a>
+            </div>
+          ) : null}
 
 
         </form>

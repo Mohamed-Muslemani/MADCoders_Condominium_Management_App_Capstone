@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import {
   getOwnerDashboard,
   getOwnerMaintenanceRequests,
@@ -6,6 +6,7 @@ import {
   uploadOwnerMaintenanceAttachment,
 } from '../../api/owner';
 import {
+  downloadMaintenanceRequestAttachment,
   deleteMaintenanceRequest,
   updateMaintenanceRequest,
 } from '../../api/maintenanceRequests';
@@ -83,6 +84,7 @@ export function OwnerMaintenancePage() {
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editingRequest, setEditingRequest] = useState<MaintenanceRequest | null>(null);
+  const [activeAttachmentId, setActiveAttachmentId] = useState<string | null>(null);
 
   async function loadPage() {
     try {
@@ -142,7 +144,7 @@ export function OwnerMaintenancePage() {
         ? `${dashboard.duesSummary.unpaidCount} unpaid`
         : undefined,
       maintenance: `${requests.length} total`,
-      documents: 'Owners',
+      documents: `${dashboard?.documentsSummary.availableCount ?? 0} docs`,
     }),
     [dashboard, requests.length],
   );
@@ -288,6 +290,45 @@ export function OwnerMaintenancePage() {
     }
   }
 
+  async function handleAttachmentAction(
+    event: MouseEvent<HTMLButtonElement>,
+    attachment: NonNullable<MaintenanceRequest['attachments']>[number],
+  ) {
+    event.stopPropagation();
+
+    try {
+      setActiveAttachmentId(attachment.fileId);
+      setSubmitError('');
+
+      const { blob, filename, mimeType } =
+        await downloadMaintenanceRequestAttachment(attachment.fileId);
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (
+        mimeType.includes('pdf') ||
+        mimeType.startsWith('image/')
+      ) {
+        window.open(objectUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        return;
+      }
+
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch (requestError) {
+      setSubmitError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Could not open this attachment.',
+      );
+    } finally {
+      setActiveAttachmentId(null);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#f5f7fb] p-6">
@@ -366,9 +407,8 @@ export function OwnerMaintenancePage() {
               }
             >
               <div className="owner-maintenance-note">
-                Click <b>New</b> and fill the form. This page only uses the fields
-                supported by the current backend: scope, priority, title, and
-                description.
+                Click <b>New</b> and fill out the request details to submit an
+                issue for your unit or the building.
               </div>
             </OwnerCard>
 
@@ -396,7 +436,11 @@ export function OwnerMaintenancePage() {
                           'owner-maintenance-item',
                           request.status === 'OPEN' ? 'is-open' : '',
                         ].join(' ')}
-                        onClick={() => openEditModal(request)}
+                        onClick={
+                          request.status === 'OPEN'
+                            ? () => openEditModal(request)
+                            : undefined
+                        }
                       >
                         <div className="owner-maintenance-item-main">
                           <strong>{request.title}</strong>
@@ -423,12 +467,18 @@ export function OwnerMaintenancePage() {
                           {request.attachments?.length ? (
                             <div className="owner-maintenance-attachments">
                               {request.attachments.map((attachment) => (
-                                <span
+                                <button
+                                  type="button"
                                   key={attachment.fileId}
-                                  className="owner-maintenance-tag"
+                                  className="owner-maintenance-attachment-button"
+                                  onClick={(event) =>
+                                    void handleAttachmentAction(event, attachment)
+                                  }
                                 >
-                                  {attachment.originalName}
-                                </span>
+                                  {activeAttachmentId === attachment.fileId
+                                    ? 'Opening...'
+                                    : attachment.originalName}
+                                </button>
                               ))}
                             </div>
                           ) : null}
@@ -456,8 +506,8 @@ export function OwnerMaintenancePage() {
                   </div>
 
                   <div className="owner-maintenance-note">
-                    Open requests can be clicked to edit them, and uploaded
-                    attachments appear directly on each request card.
+                    Open requests can be clicked to edit them, and attachments
+                    can be opened directly from each request card.
                   </div>
                 </>
               )}

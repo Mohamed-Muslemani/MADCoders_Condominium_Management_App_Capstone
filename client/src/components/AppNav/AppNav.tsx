@@ -4,6 +4,7 @@ import { getAnnouncements } from '../../api/announcements';
 import { getDocuments } from '../../api/documents';
 import { getExpenseCategories } from '../../api/expenseCategories';
 import { getMaintenanceRequests } from '../../api/maintenanceRequests';
+import { getMeetings } from '../../api/meetings';
 import { getReserveTransactions } from '../../api/reserveTransactions';
 import { getUnitDues } from '../../api/unitDues';
 import { getUnitOwners } from '../../api/unitOwners';
@@ -21,6 +22,7 @@ const adminLinks = [
   { to: '/reserve-transactions', label: 'Expenses' },
   { to: '/expense-categories', label: 'Categories' },
   { to: '/maintenance-requests', label: 'Maintenance' },
+  { to: '/meetings', label: 'Meetings' },
   { to: '/announcements', label: 'Announcements' },
   { to: '/ai-documents', label: 'AI Documents' },
 ] as const;
@@ -81,6 +83,7 @@ export function AppNav() {
           reserveTransactions,
           expenseCategories,
           maintenanceRequests,
+          meetings,
           announcements,
           documents,
         ] = await Promise.all([
@@ -91,6 +94,7 @@ export function AppNav() {
           getReserveTransactions(),
           getExpenseCategories(),
           getMaintenanceRequests(),
+          getMeetings(),
           getAnnouncements(),
           getDocuments(),
         ]);
@@ -128,6 +132,7 @@ export function AppNav() {
                 request.status === 'OPEN' || request.status === 'IN_PROGRESS',
             ).length,
           ),
+          '/meetings': String(meetings.length),
           '/announcements': String(announcements.length),
           '/ai-documents': String(documents.length),
         });
@@ -146,8 +151,8 @@ export function AppNav() {
   }, [location.pathname]);
 
   const primaryLinks = useMemo(() => adminLinks.slice(0, 5), []);
-  const operationsLinks = useMemo(() => adminLinks.slice(5, 9), []);
-  const resourcesLinks = useMemo(() => adminLinks.slice(9), []);
+  const operationsLinks = useMemo(() => adminLinks.slice(5, 10), []);
+  const resourcesLinks = useMemo(() => adminLinks.slice(10), []);
 
   return (
     <>

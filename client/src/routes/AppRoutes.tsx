@@ -8,6 +8,7 @@ import { DocumentsPage } from '../pages/DocumentsPage/DocumentAiTestPage';
 import { ExpenseCategoriesPage } from '../pages/ExpenseCategoriesPage/ExpenseCategoriesPage';
 import { LoginPage } from '../pages/LoginPage';
 import { MaintenanceRequestsPage } from '../pages/MaintenanceRequestsPage/MaintenanceRequestsPage';
+import { MeetingsPage } from '../pages/MeetingsPage/MeetingsPage';
 import { OwnerDashboardPage } from '../pages/OwnerDashboardPage/OwnerDashboardPage';
 import { OwnerDocumentsPage } from '../pages/OwnerDocumentsPage/OwnerDocumentsPage';
 import { OwnerDuesPage } from '../pages/OwnerDuesPage/OwnerDuesPage';
@@ -54,6 +55,7 @@ export function AppRoutes() {
           <Route path="/unit-dues" element={<UnitDuesPage />} />
           <Route path="/expense-categories" element={<ExpenseCategoriesPage />} />
           <Route path="/announcements" element={<AnnouncementsPage />} />
+          <Route path="/meetings" element={<MeetingsPage />} />
           <Route path="/maintenance-requests" element={<MaintenanceRequestsPage />} />
           <Route path="/reserve-transactions" element={<ReserveTransactionsPage />} />
         </Route>

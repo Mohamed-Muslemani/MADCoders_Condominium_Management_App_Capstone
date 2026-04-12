@@ -131,6 +131,27 @@
   gap: 8px;
 }
 
+.owner-maintenance-attachment-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 950;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5eaf3;
+  background: #f8fafc;
+  color: #475569;
+  white-space: nowrap;
+  transition: 0.15s ease;
+}
+
+.owner-maintenance-attachment-button:hover {
+  border-color: #dbe7ff;
+  background: #eef4ff;
+  color: #0b2b55;
+}
+
 .owner-maintenance-file {
   width: 100%;
   border: 1px dashed #cfe0ff;

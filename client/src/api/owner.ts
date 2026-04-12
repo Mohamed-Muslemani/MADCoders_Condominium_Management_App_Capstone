@@ -7,6 +7,7 @@ import {
 } from './maintenanceRequests';
 import { getUnitDuesByUnit } from './unitDues';
 import type { AnnouncementListParams } from '../types/announcement';
+import type { SearchDocumentsRequest, AskDocumentsResponse } from '../types/document';
 import type {
   CreateMaintenanceRequestRequest,
   MaintenanceRequestListParams,
@@ -55,5 +56,13 @@ export async function getOwnerDashboard() {
 
 export async function getOwnerDocuments() {
   const { data } = await api.get<DocumentSummary[]>('/owner/documents');
+  return data;
+}
+
+export async function askOwnerDocuments(payload: SearchDocumentsRequest) {
+  const { data } = await api.post<AskDocumentsResponse>(
+    '/owner/documents/ask',
+    payload,
+  );
   return data;
 }

@@ -118,6 +118,7 @@ export function AdminProfilePage() {
         password: '',
         confirmPassword: '',
       });
+      window.dispatchEvent(new Event('admin-profile-updated'));
       setSuccess(password ? 'Profile and password updated successfully.' : 'Profile updated successfully.');
     } catch (requestError) {
       setError(

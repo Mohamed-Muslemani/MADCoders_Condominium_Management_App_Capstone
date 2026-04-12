@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, type DocumentVisibility } from '@prisma/client';
 import OpenAI from 'openai';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -35,6 +35,18 @@ export class DocumentsRetrievalService {
   }
 
   async search(query: string, limit = DEFAULT_SEARCH_LIMIT) {
+    return this.searchAccessible(query, limit);
+  }
+
+  async searchOwnerAccessible(query: string, limit = DEFAULT_SEARCH_LIMIT) {
+    return this.searchAccessible(query, limit, ['PUBLIC', 'OWNERS_ONLY']);
+  }
+
+  private async searchAccessible(
+    query: string,
+    limit = DEFAULT_SEARCH_LIMIT,
+    visibilities?: DocumentVisibility[],
+  ) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       throw new ServiceUnavailableException('OPENAI_API_KEY is not configured');
@@ -64,6 +76,11 @@ export class DocumentsRetrievalService {
         INNER JOIN "DOCUMENTS" d
           ON d."document_id" = dv."document_id"
         WHERE dv."index_status" = 'INDEXED'
+        ${
+          visibilities?.length
+            ? Prisma.sql`AND d."visibility" IN (${Prisma.join(visibilities)})`
+            : Prisma.empty
+        }
         ORDER BY de."embedding" <=> ${vectorLiteral}::vector ASC
         LIMIT ${limit}
       `,
