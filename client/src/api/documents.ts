@@ -1,4 +1,5 @@
 import { api, createMultipartFormData } from './client';
+import type { AxiosResponseHeaders, RawAxiosResponseHeaders } from 'axios';
 import type { DeleteResponse } from '../types/api';
 import type {
   AskDocumentsResponse,
@@ -84,4 +85,38 @@ export async function askDocuments(payload: SearchDocumentsRequest) {
     payload,
   );
   return data;
+}
+
+function parseFilename(
+  headers: AxiosResponseHeaders | Partial<RawAxiosResponseHeaders>,
+) {
+  const contentDisposition = headers['content-disposition'];
+
+  if (!contentDisposition) {
+    return 'document.pdf';
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const plainMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+  if (plainMatch?.[1]) {
+    return decodeURIComponent(plainMatch[1]);
+  }
+
+  return 'document.pdf';
+}
+
+export async function downloadDocumentVersion(versionId: string) {
+  const response = await api.get<Blob>(`/documents/versions/${versionId}/download`, {
+    responseType: 'blob',
+  });
+
+  return {
+    blob: response.data,
+    filename: parseFilename(response.headers),
+    mimeType: response.headers['content-type'] || response.data.type,
+  };
 }

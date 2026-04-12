@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getOwnerDashboard } from '../api/owner';
-import { OwnerLayout } from '../components/owner/OwnerLayout';
+import { getOwnerDashboard } from '../../api/owner';
+import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
   OwnerActionButton,
   OwnerCard,
@@ -9,10 +9,10 @@ import {
   OwnerStatCard,
   OwnerStatusPill,
   OwnerViewState,
-} from '../components/owner/OwnerUi';
-import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../types/owner';
-import type { UnitDue, UnitDueStatus } from '../types/unit-due';
-import './owner-dues.css';
+} from '../../components/owner/OwnerUi';
+import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../../types/owner';
+import type { UnitDue, UnitDueStatus } from '../../types/unit-due';
+import './OwnerDuesPage.css';
 
 function formatDate(value?: string | null) {
   if (!value) {

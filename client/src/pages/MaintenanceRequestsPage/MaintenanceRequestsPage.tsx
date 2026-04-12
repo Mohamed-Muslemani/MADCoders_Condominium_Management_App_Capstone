@@ -6,6 +6,8 @@ import {
   createMaintenanceRequest,
   updateMaintenanceRequest,
   deleteMaintenanceRequest,
+  uploadMaintenanceRequestAttachment,
+  downloadMaintenanceRequestAttachment,
 } from '../../api/maintenanceRequests';
 import { getUnits } from '../../api/units';
 import type {
@@ -43,19 +45,43 @@ function PriorityPill({ priority }: { priority: MaintenancePriority }) {
   return <span className={`pill ${cls}`}><span className="s-dot" />{label}</span>;
 }
 
+function formatFileSize(sizeBytes: number | string) {
+  const size = typeof sizeBytes === 'string' ? Number(sizeBytes) : sizeBytes;
+
+  if (!Number.isFinite(size) || size <= 0) {
+    return 'Unknown size';
+  }
+
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 /* ── Drawer ── */
 function MaintDrawer({
   mode, request, units, saving, toast,
-  onClose, onSave, onDelete,
+  activeAttachmentId, uploadPending, uploadError,
+  onClose, onSave, onDelete, onUploadAttachment, onFileAction,
 }: {
   mode: 'create' | 'edit';
   request: MaintenanceRequest | null;
   units: Unit[];
   saving: boolean;
   toast: string;
+  activeAttachmentId: string | null;
+  uploadPending: boolean;
+  uploadError: string;
   onClose: () => void;
   onSave: (d: CreateMaintenanceRequestRequest | UpdateMaintenanceRequestRequest) => void;
   onDelete: () => void;
+  onUploadAttachment: (file: File) => void;
+  onFileAction: (fileId: string, action: 'open' | 'download') => void;
 }) {
   const [title,       setTitle]       = useState('');
   const [description, setDescription] = useState('');
@@ -64,6 +90,7 @@ function MaintDrawer({
   const [status,      setStatus]      = useState<MaintenanceStatus>('OPEN');
   const [priority,    setPriority]    = useState<MaintenancePriority>('MEDIUM');
   const [errors,      setErrors]      = useState<Record<string, string>>({});
+  const [attachment,  setAttachment]  = useState<File | null>(null);
 
   const isEdit = mode === 'edit';
 
@@ -81,6 +108,7 @@ function MaintDrawer({
       setStatus('OPEN'); setPriority('MEDIUM');
     }
     setErrors({});
+    setAttachment(null);
   }, [mode, request?.requestId]);
 
   function validate() {
@@ -208,6 +236,90 @@ function MaintDrawer({
               {errors.description && <div className="field-err">{errors.description}</div>}
             </div>
 
+            {isEdit && request ? (
+              <div className="mt-[12px] rounded-[16px] border border-[#e5eaf3] bg-[#fbfcff] p-[12px]">
+                <div className="mb-[10px] flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="m-0 text-[13px] font-black text-[#0f172a]">
+                      Attachments
+                    </h4>
+                    <p className="m-0 mt-1 text-[12px] leading-[1.35] text-[#64748b]">
+                      Upload photos or PDFs and open them directly from this request.
+                    </p>
+                  </div>
+                  <span className="pill">
+                    <span className="s-dot" style={{ background: '#64748b' }} />
+                    {request.attachments?.length ?? 0} file{(request.attachments?.length ?? 0) === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                {request.attachments?.length ? (
+                  <div className="maint-attachment-list">
+                    {request.attachments.map((file) => (
+                      <div key={file.fileId} className="maint-attachment-card">
+                        <div className="maint-attachment-meta">
+                          <strong>{file.originalName}</strong>
+                          <span>
+                            {formatFileSize(file.sizeBytes)}
+                            {file.uploadedAt ? ` • ${file.uploadedAt.slice(0, 10)}` : ''}
+                          </span>
+                        </div>
+                        <div className="maint-attachment-actions">
+                          <button
+                            className="btn-ghost"
+                            type="button"
+                            onClick={() => onFileAction(file.fileId, 'open')}
+                            disabled={activeAttachmentId === file.fileId}
+                          >
+                            {activeAttachmentId === file.fileId ? 'Opening…' : 'Open'}
+                          </button>
+                          <button
+                            className="btn-soft"
+                            type="button"
+                            onClick={() => onFileAction(file.fileId, 'download')}
+                            disabled={activeAttachmentId === file.fileId}
+                          >
+                            {activeAttachmentId === file.fileId ? 'Preparing…' : 'Download'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="maint-attachment-empty">
+                    No attachments yet.
+                  </div>
+                )}
+
+                <div className="maint-attachment-upload">
+                  <input
+                    className="maint-file-input"
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp,.pdf"
+                    onChange={(event) =>
+                      setAttachment(event.target.files?.[0] ?? null)
+                    }
+                  />
+                  <div className="maint-attachment-upload-row">
+                    <span className="maint-attachment-help">
+                      {attachment ? `Selected: ${attachment.name}` : 'Choose one photo or PDF to upload.'}
+                    </span>
+                    <button
+                      className="btn-solid"
+                      type="button"
+                      onClick={() => attachment && onUploadAttachment(attachment)}
+                      disabled={!attachment || uploadPending}
+                    >
+                      {uploadPending ? 'Uploading…' : 'Upload File'}
+                    </button>
+                  </div>
+                  {uploadError ? (
+                    <div className="field-err">{uploadError}</div>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
             {/* Danger Zone */}
             {isEdit && (
               <div className="danger-wrap">
@@ -273,6 +385,9 @@ export function MaintenanceRequestsPage() {
   const [drawer, setDrawer] = useState(false);
   const [mode,   setMode]   = useState<'create' | 'edit'>('create');
   const [active, setActive] = useState<MaintenanceRequest | null>(null);
+  const [uploadPending, setUploadPending] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [activeAttachmentId, setActiveAttachmentId] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg); setTimeout(() => setToast(''), 2200);
@@ -309,9 +424,23 @@ export function MaintenanceRequestsPage() {
   const startIdx   = (page - 1) * pageSize;
   const pageItems  = filtered.slice(startIdx, startIdx + pageSize);
 
-  function openCreate() { setMode('create'); setActive(null); setDrawer(true); }
-  function openEdit(r: MaintenanceRequest) { setMode('edit'); setActive(r); setDrawer(true); }
-  function closeDrawer() { setDrawer(false); setActive(null); }
+  function openCreate() {
+    setMode('create');
+    setActive(null);
+    setUploadError('');
+    setDrawer(true);
+  }
+  function openEdit(r: MaintenanceRequest) {
+    setMode('edit');
+    setActive(r);
+    setUploadError('');
+    setDrawer(true);
+  }
+  function closeDrawer() {
+    setDrawer(false);
+    setActive(null);
+    setUploadError('');
+  }
 
   async function handleSave(
     payload: CreateMaintenanceRequestRequest | UpdateMaintenanceRequestRequest
@@ -329,6 +458,61 @@ export function MaintenanceRequestsPage() {
       await fetchAll();
     } catch { showToast('Something went wrong.'); }
     finally { setSaving(false); }
+  }
+
+  async function handleUploadAttachment(file: File) {
+    if (!active) return;
+
+    try {
+      setUploadPending(true);
+      setUploadError('');
+      await uploadMaintenanceRequestAttachment(active.requestId, file);
+      const refreshed = await getMaintenanceRequests();
+      setRequests(refreshed);
+      const updated = refreshed.find(
+        (request) => request.requestId === active.requestId,
+      );
+      if (updated) {
+        setActive(updated);
+      }
+      showToast('Attachment uploaded.');
+    } catch {
+      setUploadError('Could not upload the attachment.');
+    } finally {
+      setUploadPending(false);
+    }
+  }
+
+  async function handleAttachmentAction(
+    fileId: string,
+    action: 'open' | 'download',
+  ) {
+    try {
+      setActiveAttachmentId(fileId);
+      const { blob, filename, mimeType } =
+        await downloadMaintenanceRequestAttachment(fileId);
+      const blobUrl = URL.createObjectURL(
+        blob.type ? blob : new Blob([blob], { type: mimeType || 'application/octet-stream' }),
+      );
+
+      if (action === 'open') {
+        window.open(blobUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        return;
+      }
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      showToast('Could not open the attachment.');
+    } finally {
+      setActiveAttachmentId(null);
+    }
   }
 
   async function handleDelete() {
@@ -434,12 +618,20 @@ export function MaintenanceRequestsPage() {
               {/* Title + sub */}
               <div>
                 <div className="row-title">{r.title}</div>
-                <div className="row-sub">
-                  {r.submittedBy.firstName} {r.submittedBy.lastName} •{' '}
-                  {r.unit ? `Unit ${r.unit.unitNumber}` : 'Building'} •{' '}
-                  {r.createdAt.slice(0, 10)}
-                </div>
+              <div className="row-sub">
+                {r.submittedBy.firstName} {r.submittedBy.lastName} •{' '}
+                {r.unit ? `Unit ${r.unit.unitNumber}` : 'Building'} •{' '}
+                {r.createdAt.slice(0, 10)}
               </div>
+              {r.attachments?.length ? (
+                <div className="row-inline-tags">
+                  <span className="pill">
+                    <span className="s-dot" style={{ background: '#64748b' }} />
+                    {r.attachments.length} attachment{r.attachments.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+              ) : null}
+            </div>
 
               {/* Status */}
               <div className="row-meta">
@@ -487,9 +679,14 @@ export function MaintenanceRequestsPage() {
           units={units}
           saving={saving}
           toast={toast}
+          activeAttachmentId={activeAttachmentId}
+          uploadPending={uploadPending}
+          uploadError={uploadError}
           onClose={closeDrawer}
           onSave={handleSave}
           onDelete={handleDelete}
+          onUploadAttachment={handleUploadAttachment}
+          onFileAction={handleAttachmentAction}
         />
       )}
     </>

@@ -16,7 +16,6 @@ import { DuesImportsModule } from './dues-imports/dues-imports.module';
 import { ExpenseCategoriesModule } from './expense-categories/expense-categories.module';
 import { OwnerModule } from './owner/owner.module';
 
-
 @Module({
   imports: [
     AnnouncementsModule,

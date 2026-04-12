@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { OwnerHeaderAction, OwnerLayoutUser } from '../../types/owner';
 
 function getInitial(user?: OwnerLayoutUser | null) {
@@ -51,7 +52,7 @@ export function OwnerTopbar({
             ),
           )}
 
-          <div className="owner-shell-profile">
+          <Link to="/owner/profile" className="owner-shell-profile owner-shell-profile-link">
             <div className="owner-shell-avatar">{getInitial(user)}</div>
             <div>
               <strong>
@@ -59,7 +60,7 @@ export function OwnerTopbar({
               </strong>
               <span>{unitLabel ?? 'Unit pending'}</span>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </header>

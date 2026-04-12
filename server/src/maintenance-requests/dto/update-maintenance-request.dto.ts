@@ -1,9 +1,4 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  ValidateIf,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 export class UpdateMaintenanceRequestDto {
   @IsOptional()

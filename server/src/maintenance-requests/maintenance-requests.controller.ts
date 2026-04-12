@@ -9,12 +9,15 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateMaintenanceRequestDto } from './dto/create-maintenance-request.dto';
 import { QueryMaintenanceRequestDto } from './dto/query-maintenance-request.dto';
@@ -27,9 +30,7 @@ const maintenanceAttachmentTypePattern = /(pdf|png|jpe?g|webp)$/i;
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('maintenance-requests')
 export class MaintenanceRequestsController {
-  constructor(
-    private maintenanceRequestsService: MaintenanceRequestsService,
-  ) {}
+  constructor(private maintenanceRequestsService: MaintenanceRequestsService) {}
 
   @Get()
   async findAll(@Req() req: any, @Query() query: QueryMaintenanceRequestDto) {
@@ -100,6 +101,27 @@ export class MaintenanceRequestsController {
     },
   ) {
     return this.maintenanceRequestsService.uploadAttachment(req.user, id, file);
+  }
+
+  @Get('attachments/:fileId/download')
+  async downloadAttachment(
+    @Req() req: any,
+    @Param('fileId') fileId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.maintenanceRequestsService.getAttachmentDownload(
+      req.user,
+      fileId,
+    );
+
+    res.setHeader('Content-Type', result.mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(result.originalName)}"`,
+    );
+    res.setHeader('Content-Length', String(result.sizeBytes));
+
+    return new StreamableFile(result.stream);
   }
 
   @Patch(':id')

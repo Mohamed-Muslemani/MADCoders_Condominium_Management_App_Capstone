@@ -1,14 +1,17 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import './UnitOwnersPage.css';
-import { getUnitOwners, createUnitOwner, deleteUnitOwner } from '../../api/unitOwners';
+import {
+  createUnitOwner,
+  deleteUnitOwner,
+  getUnitOwners,
+} from '../../api/unitOwners';
 import { getUnits } from '../../api/units';
-import { getUsers, createUser, updateUser, deleteUser } from '../../api/users';
+import { getUsers } from '../../api/users';
 import type { UnitOwner } from '../../types/unit-owner';
 import type { Unit } from '../../types/unit';
 import type { User } from '../../types/user';
 
-/* ── helpers ── */
 function initials(firstName: string, lastName: string) {
   return ((firstName?.[0] ?? '') + (lastName?.[0] ?? '')).toUpperCase() || 'O';
 }
@@ -22,308 +25,118 @@ function StatusBadge({ active }: { active: boolean }) {
   );
 }
 
-/* ══════════════════════════════════════
-   CREATE OWNER DRAWER
-══════════════════════════════════════ */
-function CreateOwnerDrawer({
-  onClose, onCreated,
-}: {
-  onClose: () => void;
-  onCreated: (user: User) => void;
-}) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName,  setLastName]  = useState('');
-  const [email,     setEmail]     = useState('');
-  const [phone,     setPhone]     = useState('');
-  const [password,  setPassword]  = useState('');
-  const [saving,    setSaving]    = useState(false);
-  const [errors,    setErrors]    = useState<Record<string, string>>({});
+function isOwnershipActive(record: UnitOwner) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  function validate() {
-    const errs: Record<string, string> = {};
-    if (!firstName.trim()) errs.firstName = 'First name is required.';
-    if (!lastName.trim())  errs.lastName  = 'Last name is required.';
-    if (!email.trim())     errs.email     = 'Email is required.';
-    if (!password.trim())  errs.password  = 'Password is required.';
-    else if (password.length < 6) errs.password = 'Password must be at least 6 characters.';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+  const start = new Date(record.startDate);
+  start.setHours(0, 0, 0, 0);
+
+  const end = record.endDate ? new Date(record.endDate) : null;
+  if (end) {
+    end.setHours(0, 0, 0, 0);
   }
 
-  async function handleCreate() {
-    if (!validate()) return;
-    try {
-      setSaving(true);
-      const user = await createUser({
-        firstName: firstName.trim(),
-        lastName:  lastName.trim(),
-        email:     email.trim(),
-        phone:     phone.trim() || undefined,
-        password:  password,
-        role:      'OWNER',
-        active:    true,
-      });
-      onCreated(user);
-    } catch {
-      setErrors(e => ({ ...e, email: 'Could not create owner. Email may already exist.' }));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-[80]"
-        style={{ background: 'rgba(2,6,23,0.45)' }}
-        onClick={onClose}
-      />
-      <div className="create-drawer">
-        <div className="drawer-head">
-          <div>
-            <strong className="block text-[16px] font-black tracking-[-0.02em] text-[#0f172a]">
-              Create Owner
-            </strong>
-            <span className="mt-1 block text-[12px] leading-[1.35] text-[#64748b]">
-              New owner account
-            </span>
-          </div>
-          <button className="x-btn" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="drawer-body">
-          <div className="detail-card">
-            <div className="card-head">
-              <div>
-                <h4>Owner Info</h4>
-                <p>Email must be unique. Password min 6 characters.</p>
-              </div>
-            </div>
-
-            <div className="grid2">
-              <div>
-                <label className="form-label">First Name *</label>
-                <input className="form-input" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="e.g., Sarah" />
-                {errors.firstName && <div className="field-err">{errors.firstName}</div>}
-              </div>
-              <div>
-                <label className="form-label">Last Name *</label>
-                <input className="form-input" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="e.g., Ahmed" />
-                {errors.lastName && <div className="field-err">{errors.lastName}</div>}
-              </div>
-            </div>
-
-            <div className="grid2 mt-[10px]">
-              <div>
-                <label className="form-label">Email *</label>
-                <input className="form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g., sarah@mail.com" />
-                {errors.email && <div className="field-err">{errors.email}</div>}
-              </div>
-              <div>
-                <label className="form-label">Phone</label>
-                <input className="form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g., (519) 555-1133" />
-              </div>
-            </div>
-
-            <div className="mt-[10px]">
-              <label className="form-label">Password *</label>
-              <input className="form-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" />
-              {errors.password && <div className="field-err">{errors.password}</div>}
-            </div>
-          </div>
-        </div>
-
-        <div className="drawer-foot">
-          <button className="btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn-solid" onClick={handleCreate} disabled={saving}>
-            {saving ? 'Creating…' : 'Create Owner'}
-          </button>
-        </div>
-      </div>
-    </>
-  );
+  return start <= today && (!end || end >= today);
 }
 
-/* ══════════════════════════════════════
-   DETAIL PANEL
-══════════════════════════════════════ */
-function OwnerDetail({
-  user, unitOwners, units, onUpdated, onDeleted, onAssign, onUnassign, toast,
+function OwnershipDetail({
+  user,
+  unitOwners,
+  units,
+  toast,
+  onAssign,
+  onUnassign,
 }: {
   user: User;
   unitOwners: UnitOwner[];
   units: Unit[];
-  onUpdated: (u: User) => void;
-  onDeleted: () => void;
+  toast: string;
   onAssign: (unitId: string) => void;
   onUnassign: (unitOwnerId: string) => void;
-  toast: string;
 }) {
-  const [firstName,  setFirstName]  = useState(user.firstName);
-  const [lastName,   setLastName]   = useState(user.lastName);
-  const [email,      setEmail]      = useState(user.email);
-  const [phone,      setPhone]      = useState(user.phone ?? '');
-  const [active,     setActive]     = useState(user.active);
-  const [saving,     setSaving]     = useState(false);
-  const [errors,     setErrors]     = useState<Record<string, string>>({});
   const [unitSearch, setUnitSearch] = useState('');
 
-  useEffect(() => {
-    setFirstName(user.firstName);
-    setLastName(user.lastName);
-    setEmail(user.email);
-    setPhone(user.phone ?? '');
-    setActive(user.active);
-    setErrors({});
-  }, [user.userId]);
+  const ownerRecords = useMemo(
+    () => unitOwners.filter((record) => record.userId === user.userId),
+    [unitOwners, user.userId],
+  );
 
-  function validate() {
-    const errs: Record<string, string> = {};
-    if (!firstName.trim()) errs.firstName = 'First name is required.';
-    if (!lastName.trim())  errs.lastName  = 'Last name is required.';
-    if (!email.trim())     errs.email     = 'Email is required.';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  async function handleSave() {
-    if (!validate()) return;
-    try {
-      setSaving(true);
-      const updated = await updateUser(user.userId, {
-        firstName: firstName.trim(),
-        lastName:  lastName.trim(),
-        email:     email.trim(),
-        phone:     phone.trim() || null,
-        active,
-      });
-      onUpdated(updated);
-    } catch {
-      setErrors(e => ({ ...e, email: 'Could not save. Email may already exist.' }));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleToggle() {
-    try {
-      const updated = await updateUser(user.userId, { active: !active });
-      setActive(!active);
-      onUpdated(updated);
-    } catch {}
-  }
-
-  async function handleDelete() {
-    if (!window.confirm(`Delete owner "${user.firstName} ${user.lastName}"? This cannot be undone.`)) return;
-    try {
-      await deleteUser(user.userId);
-      onDeleted();
-    } catch {}
-  }
-
-  const assignedOwnerRecords = unitOwners.filter(o => o.userId === user.userId);
-  const assignedUnitIds = new Set(assignedOwnerRecords.map(o => o.unitId));
-  const unitsCount = assignedOwnerRecords.length;
+  const activeRecords = ownerRecords.filter(isOwnershipActive);
+  const assignedUnitIds = new Set(activeRecords.map((record) => record.unitId));
 
   const unitResults = units
-    .filter(u => {
-      const q = unitSearch.toLowerCase();
-      return !q || u.unitNumber.toLowerCase().includes(q);
-    })
+    .filter((unit) =>
+      unit.unitNumber.toLowerCase().includes(unitSearch.trim().toLowerCase()),
+    )
     .slice(0, 25);
 
   return (
     <div className="detail-panel">
-      {toast && <div className="detail-toast">{toast}</div>}
+      {toast ? <div className="detail-toast">{toast}</div> : null}
 
-      {/* Profile card */}
       <div className="detail-card">
         <div className="card-head">
           <div>
-            <h4>Owner Profile</h4>
-            <p>Edit owner info. Email must be unique.</p>
+            <h4>Owner Summary</h4>
+            <p>Account edits now live on the Users page. This workspace is for ownership assignments only.</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="o-units-count">{unitsCount} units</span>
-            <StatusBadge active={active} />
+            <span className="o-units-count">{activeRecords.length} active units</span>
+            <StatusBadge active={user.active} />
           </div>
         </div>
 
-        <div className="grid2">
-          <div>
-            <label className="form-label">First Name *</label>
-            <input className="form-input" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="e.g., Sarah" />
-            {errors.firstName && <div className="field-err">{errors.firstName}</div>}
+        <div className="ownership-summary-grid">
+          <div className="ownership-summary-item">
+            <span>Name</span>
+            <strong>{user.firstName} {user.lastName}</strong>
           </div>
-          <div>
-            <label className="form-label">Last Name *</label>
-            <input className="form-input" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="e.g., Ahmed" />
-            {errors.lastName && <div className="field-err">{errors.lastName}</div>}
+          <div className="ownership-summary-item">
+            <span>Email</span>
+            <strong>{user.email}</strong>
           </div>
-        </div>
-
-        <div className="grid2 mt-[10px]">
-          <div>
-            <label className="form-label">Email *</label>
-            <input className="form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g., sarah@mail.com" />
-            {errors.email && <div className="field-err">{errors.email}</div>}
+          <div className="ownership-summary-item">
+            <span>Phone</span>
+            <strong>{user.phone || '—'}</strong>
           </div>
-          <div>
-            <label className="form-label">Phone</label>
-            <input className="form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g., (519) 555-1133" />
+          <div className="ownership-summary-item">
+            <span>Status</span>
+            <strong>{user.active ? 'Active' : 'Disabled'}</strong>
           </div>
-        </div>
-
-        <div className="grid2 mt-[10px]">
-          <div>
-            <label className="form-label">Status</label>
-            <select className="form-select" value={active ? 'ACTIVE' : 'INACTIVE'} onChange={e => setActive(e.target.value === 'ACTIVE')}>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Disabled</option>
-            </select>
-          </div>
-          <div>
-            <label className="form-label">Quick Toggle</label>
-            <button className="btn-ghost" style={{ width: '100%' }} onClick={handleToggle}>
-              {active ? 'Disable Owner' : 'Enable Owner'}
-            </button>
-          </div>
-        </div>
-
-        <div className="actions-row">
-          <button className="btn-solid" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Changes'}
-          </button>
-          <button className="btn-danger" onClick={handleDelete}>Delete Owner</button>
         </div>
       </div>
 
-      {/* Unit ownership card */}
       <div className="detail-card">
         <div className="card-head">
           <div>
-            <h4>Unit Ownership</h4>
-            <p>Search a unit and click Assign to link it to this owner.</p>
+            <h4>Ownership Assignments</h4>
+            <p>Assign active units to this owner or remove existing links.</p>
           </div>
         </div>
 
         <div className="section-head">
           <h5>Assigned Units</h5>
-          <span>Search + Assign below</span>
+          <span>{ownerRecords.length} total records</span>
         </div>
 
         <div className="assigned-chips">
-          {assignedOwnerRecords.length === 0 ? (
-            <span className="chip-empty">No units assigned</span>
-          ) : assignedOwnerRecords.map(record => {
-            const u = units.find(x => x.unitId === record.unitId);
-            return (
-              <span key={record.unitOwnerId} className="chip-unit">
-                {u?.unitNumber ?? record.unitId}
-                <button onClick={() => onUnassign(record.unitOwnerId)}>✕</button>
-              </span>
-            );
-          })}
+          {ownerRecords.length === 0 ? (
+            <span className="chip-empty">No unit ownerships assigned</span>
+          ) : (
+            ownerRecords.map((record) => {
+              const unit = units.find((item) => item.unitId === record.unitId);
+              return (
+                <span key={record.unitOwnerId} className="chip-unit">
+                  {unit?.unitNumber ?? record.unitId}
+                  <span className="chip-unit-meta">
+                    {isOwnershipActive(record) ? 'Active' : 'Ended'}
+                  </span>
+                  <button onClick={() => onUnassign(record.unitOwnerId)}>✕</button>
+                </span>
+              );
+            })
+          )}
         </div>
 
         <div className="assign-box">
@@ -331,8 +144,8 @@ function OwnerDetail({
             <span className="text-[#64748b]">🔎</span>
             <input
               value={unitSearch}
-              onChange={e => setUnitSearch(e.target.value)}
-              placeholder="Search unit # (e.g., A07-02)…"
+              onChange={(event) => setUnitSearch(event.target.value)}
+              placeholder="Search unit number…"
             />
           </div>
           <div className="assign-results">
@@ -342,24 +155,26 @@ function OwnerDetail({
                   <div className="t" style={{ color: '#64748b' }}>No matching units</div>
                 </div>
               </div>
-            ) : unitResults.map(u => (
-              <div key={u.unitId} className="unit-result-row">
-                <div className="unit-result-meta">
-                  <div className="t">{u.unitNumber}</div>
-                  <div className="s">
-                    {u.floor != null ? `Floor ${u.floor}` : ''}
-                    {u.unitType ? ` • ${u.unitType}` : ''}
+            ) : (
+              unitResults.map((unit) => (
+                <div key={unit.unitId} className="unit-result-row">
+                  <div className="unit-result-meta">
+                    <div className="t">{unit.unitNumber}</div>
+                    <div className="s">
+                      {unit.floor != null ? `Floor ${unit.floor}` : ''}
+                      {unit.unitType ? ` • ${unit.unitType}` : ''}
+                    </div>
                   </div>
+                  {assignedUnitIds.has(unit.unitId) ? (
+                    <span className="chip-assigned">Assigned</span>
+                  ) : (
+                    <button className="btn-small" onClick={() => onAssign(unit.unitId)}>
+                      Assign
+                    </button>
+                  )}
                 </div>
-                {assignedUnitIds.has(u.unitId) ? (
-                  <span className="chip-assigned">Assigned</span>
-                ) : (
-                  <button className="btn-small" onClick={() => onAssign(u.unitId)}>
-                    Assign
-                  </button>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -367,121 +182,149 @@ function OwnerDetail({
   );
 }
 
-/* ══════════════════════════════════════
-   MAIN PAGE
-══════════════════════════════════════ */
 export function UnitOwnersPage() {
   const location = useLocation();
 
-  const [users,      setUsers]      = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [unitOwners, setUnitOwners] = useState<UnitOwner[]>([]);
-  const [units,      setUnits]      = useState<Unit[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState('');
-  const [toast,      setToast]      = useState('');
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusF, setStatusF] = useState('');
+  const [page, setPage] = useState(1);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
 
-  const [search,    setSearch]    = useState('');
-  const [statusF,   setStatusF]   = useState('');
-  const [page,      setPage]      = useState(1);
   const pageSize = 25;
 
-  const [selectedUserId,    setSelectedUserId]    = useState<string | null>(null);
-  const [showCreate,        setShowCreate]        = useState(false);
-  const [showMobileDetail,  setShowMobileDetail]  = useState(false);
-
-  const showToast = (msg: string) => {
-    setToast(msg); setTimeout(() => setToast(''), 2200);
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 2200);
   };
 
   const fetchAll = useCallback(async () => {
     try {
-      setLoading(true); setError('');
-      const [u, o, un] = await Promise.all([getUsers(), getUnitOwners(), getUnits()]);
-      setUsers(u.filter(x => x.role === 'OWNER'));
-      setUnitOwners(o);
-      setUnits(un);
-    } catch { setError('Could not load owners'); }
-    finally { setLoading(false); }
+      setLoading(true);
+      setError('');
+      const [allUsers, ownerships, allUnits] = await Promise.all([
+        getUsers(),
+        getUnitOwners(),
+        getUnits(),
+      ]);
+      setUsers(allUsers.filter((user) => user.role === 'OWNER'));
+      setUnitOwners(ownerships);
+      setUnits(allUnits);
+    } catch {
+      setError('Could not load ownership records.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { fetchAll(); }, [location.key]);
+  useEffect(() => {
+    void fetchAll();
+  }, [fetchAll, location.key]);
 
   const filtered = users
-    .filter(u => {
-      const s = search.toLowerCase();
-      const name = `${u.firstName} ${u.lastName}`.toLowerCase();
+    .filter((user) => {
+      const query = search.trim().toLowerCase();
+      const name = `${user.firstName} ${user.lastName}`.toLowerCase();
       return (
-        (!s || name.includes(s) || u.email.toLowerCase().includes(s) || (u.phone ?? '').includes(s))
-        && (statusF === '' || (statusF === 'active' ? u.active : !u.active))
+        (!query ||
+          name.includes(query) ||
+          user.email.toLowerCase().includes(query) ||
+          (user.phone ?? '').toLowerCase().includes(query)) &&
+        (statusF === '' || (statusF === 'active' ? user.active : !user.active))
       );
     })
-    .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+    .sort((a, b) =>
+      `${a.firstName} ${a.lastName}`.localeCompare(
+        `${b.firstName} ${b.lastName}`,
+      ),
+    );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const startIdx   = (page - 1) * pageSize;
-  const pageItems  = filtered.slice(startIdx, startIdx + pageSize);
+  const startIdx = (page - 1) * pageSize;
+  const pageItems = filtered.slice(startIdx, startIdx + pageSize);
 
   function countUnits(userId: string) {
-    return unitOwners.filter(o => o.userId === userId && !o.endDate).length;
+    return unitOwners.filter(
+      (record) => record.userId === userId && isOwnershipActive(record),
+    ).length;
   }
 
-  const selectedUser = users.find(u => u.userId === selectedUserId) ?? null;
+  const selectedUser =
+    users.find((user) => user.userId === selectedUserId) ?? null;
 
   async function handleAssign(unitId: string) {
-    if (!selectedUserId) return;
+    if (!selectedUserId) {
+      return;
+    }
+
     try {
       const record = await createUnitOwner({
         unitId,
         userId: selectedUserId,
         startDate: new Date().toISOString().slice(0, 10),
       });
-      setUnitOwners(prev => [...prev, record]);
-      showToast('Unit assigned.');
-    } catch { showToast('Could not assign unit.'); }
+      setUnitOwners((current) => [...current, record]);
+      showToast('Ownership assigned.');
+    } catch {
+      showToast('Could not assign ownership.');
+    }
   }
 
   async function handleUnassign(unitOwnerId: string) {
     try {
       await deleteUnitOwner(unitOwnerId);
-      setUnitOwners(prev => prev.filter(o => o.unitOwnerId !== unitOwnerId));
-      showToast('Unit removed.');
-    } catch { showToast('Could not remove unit.'); }
-  }
-
-  function handleUpdated(updated: User) {
-    setUsers(prev => prev.map(u => u.userId === updated.userId ? updated : u));
-    setShowMobileDetail(false);
-    showToast('Owner saved successfully.');
-  }
-
-  function handleDeleted() {
-    setUsers(prev => prev.filter(u => u.userId !== selectedUserId));
-    setUnitOwners(prev => prev.filter(o => o.userId !== selectedUserId));
-    setSelectedUserId(null);
-    setShowMobileDetail(false);
-    showToast('Owner deleted.');
-  }
-
-  function handleCreated(user: User) {
-    setUsers(prev => [user, ...prev]);
-    setSelectedUserId(user.userId);
-    setShowCreate(false);
-    showToast('Owner created successfully.');
+      setUnitOwners((current) =>
+        current.filter((record) => record.unitOwnerId !== unitOwnerId),
+      );
+      showToast('Ownership removed.');
+    } catch {
+      showToast('Could not remove ownership.');
+    }
   }
 
   function exportCSV() {
-    const header = ['userId','firstName','lastName','email','phone','active','units'].join(',');
-    const rows = filtered.map(u =>
-      [u.userId, `"${u.firstName}"`, `"${u.lastName}"`, `"${u.email}"`, `"${u.phone ?? ''}"`, u.active, countUnits(u.userId)].join(',')
+    const rows = unitOwners
+      .filter((record) =>
+        filtered.some((user) => user.userId === record.userId),
+      )
+      .map((record) => {
+        const owner = users.find((user) => user.userId === record.userId);
+        const unit = units.find((item) => item.unitId === record.unitId);
+        return [
+          `"${owner ? `${owner.firstName} ${owner.lastName}` : record.userId}"`,
+          `"${owner?.email ?? ''}"`,
+          `"${unit?.unitNumber ?? record.unitId}"`,
+          `"${record.startDate.slice(0, 10)}"`,
+          `"${record.endDate?.slice(0, 10) ?? ''}"`,
+          `"${isOwnershipActive(record) ? 'ACTIVE' : 'ENDED'}"`,
+        ].join(',');
+      });
+
+    const header = [
+      'owner_name',
+      'owner_email',
+      'unit_number',
+      'start_date',
+      'end_date',
+      'status',
+    ].join(',');
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(
+      new Blob([[header, ...rows].join('\n')], { type: 'text/csv' }),
     );
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([[header, ...rows].join('\n')], { type: 'text/csv' }));
-    a.download = 'owners.csv'; a.click();
+    link.download = 'ownerships.csv';
+    link.click();
   }
 
   return (
     <>
-      {/* ── Hero ── */}
       <section
         className="rounded-[18px] border border-[#e5eaf3] p-4"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
@@ -489,10 +332,10 @@ export function UnitOwnersPage() {
         <div className="flex items-end justify-between gap-3">
           <div>
             <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
-              Owners Management
+              Ownerships
             </h2>
             <p className="m-0 mt-[6px] text-[13px] leading-[1.35] text-[#64748b]">
-              Create owners, store contact info, toggle Active/Disabled, and assign units.
+              Manage which owner accounts are linked to which units. User account creation and editing now happens on the Users page.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-[10px]">
@@ -501,21 +344,17 @@ export function UnitOwnersPage() {
               {loading ? '—' : `${filtered.length} owners`}
             </span>
             <button className="btn-soft" onClick={exportCSV}>Export CSV</button>
-            <button className="btn-solid" onClick={() => setShowCreate(true)}>+ Create Owner</button>
           </div>
         </div>
       </section>
 
-      {error && (
+      {error ? (
         <div className="mt-3 rounded-[12px] border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[13px] font-black text-[#991b1b]">
           {error}
         </div>
-      )}
+      ) : null}
 
-      {/* ── Split ── */}
       <div className="owners-split">
-
-        {/* LEFT — list */}
         <div className="owners-panel">
           <div className="panel-head">
             <h3>Owners</h3>
@@ -527,16 +366,33 @@ export function UnitOwnersPage() {
               <span className="shrink-0">🔎</span>
               <input
                 value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
-                placeholder="Search name, email, phone…"
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search owner name, email, phone…"
               />
             </div>
-            <select className="toolbar-select" value={statusF} onChange={e => { setStatusF(e.target.value); setPage(1); }}>
+            <select
+              className="toolbar-select"
+              value={statusF}
+              onChange={(event) => {
+                setStatusF(event.target.value);
+                setPage(1);
+              }}
+            >
               <option value="">All</option>
               <option value="active">Active</option>
               <option value="disabled">Disabled</option>
             </select>
-            <button className="btn-ghost" onClick={() => { setSearch(''); setStatusF(''); setPage(1); }}>
+            <button
+              className="btn-ghost"
+              onClick={() => {
+                setSearch('');
+                setStatusF('');
+                setPage(1);
+              }}
+            >
               Clear
             </button>
           </div>
@@ -553,32 +409,35 @@ export function UnitOwnersPage() {
                   </div>
                 </div>
               </div>
-            ) : pageItems.map(u => (
-              <div
-                key={u.userId}
-                className={`owner-row ${selectedUserId === u.userId ? 'selected' : ''}`}
-                onClick={() => {
-                  setSelectedUserId(u.userId);
-                  if (window.innerWidth <= 980) setShowMobileDetail(true);
-                }}
-              >
-                <div className="o-left">
-                  <div className="o-avatar">{initials(u.firstName, u.lastName)}</div>
-                  <div className="o-meta">
-                    <div className="o-name">{u.firstName} {u.lastName}</div>
-                    <div className="o-email">{u.email}</div>
-                    <div className="o-phone">📞 {u.phone || '—'}</div>
+            ) : (
+              pageItems.map((user) => (
+                <div
+                  key={user.userId}
+                  className={`owner-row ${selectedUserId === user.userId ? 'selected' : ''}`}
+                  onClick={() => {
+                    setSelectedUserId(user.userId);
+                    if (window.innerWidth <= 980) {
+                      setShowMobileDetail(true);
+                    }
+                  }}
+                >
+                  <div className="o-left">
+                    <div className="o-avatar">{initials(user.firstName, user.lastName)}</div>
+                    <div className="o-meta">
+                      <div className="o-name">{user.firstName} {user.lastName}</div>
+                      <div className="o-email">{user.email}</div>
+                      <div className="o-phone">📞 {user.phone || '—'}</div>
+                    </div>
+                  </div>
+                  <div className="o-right">
+                    <span className="o-units-count">{countUnits(user.userId)} units</span>
+                    <StatusBadge active={user.active} />
                   </div>
                 </div>
-                <div className="o-right">
-                  <span className="o-units-count">{countUnits(u.userId)} units</span>
-                  <StatusBadge active={u.active} />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
-          {/* Footer */}
           <div className="owners-foot">
             <div className="page-info">
               {filtered.length > 0
@@ -586,42 +445,38 @@ export function UnitOwnersPage() {
                 : 'Showing 0–0 of 0'}
             </div>
             <div className="pager">
-              <button className="btn-ghost" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Prev</button>
+              <button className="btn-ghost" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1}>Prev</button>
               <span className="page-info">Page {page} of {totalPages}</span>
-              <button className="btn-ghost" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</button>
+              <button className="btn-ghost" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>Next</button>
             </div>
           </div>
         </div>
 
-        {/* RIGHT — desktop detail */}
         <div className="owners-panel detail-panel-desktop">
           <div className="panel-head">
-            <h3>Owner Details</h3>
+            <h3>Ownership Details</h3>
             <span>{selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : 'Click an owner'}</span>
           </div>
           {!selectedUser ? (
             <div className="detail-empty">
-              <span className="text-[32px]">👤</span>
-              <span>Select an owner from the list to view and edit details.</span>
+              <span className="text-[32px]">🏠</span>
+              <span>Select an owner to manage unit assignments.</span>
             </div>
           ) : (
-            <OwnerDetail
+            <OwnershipDetail
               key={selectedUser.userId}
               user={selectedUser}
               unitOwners={unitOwners}
               units={units}
-              onUpdated={handleUpdated}
-              onDeleted={handleDeleted}
+              toast={toast}
               onAssign={handleAssign}
               onUnassign={handleUnassign}
-              toast={toast}
             />
           )}
         </div>
       </div>
 
-      {/* ── Mobile detail drawer ── */}
-      {showMobileDetail && selectedUser && (
+      {showMobileDetail && selectedUser ? (
         <>
           <div
             className="fixed inset-0 z-[80]"
@@ -635,33 +490,24 @@ export function UnitOwnersPage() {
                   {selectedUser.firstName} {selectedUser.lastName}
                 </strong>
                 <span className="mt-1 block text-[12px] leading-[1.35] text-[#64748b]">
-                  {selectedUser.email}
+                  Ownership assignments
                 </span>
               </div>
               <button className="x-btn" onClick={() => setShowMobileDetail(false)}>✕</button>
             </div>
-            <OwnerDetail
-              key={selectedUser.userId + '-mobile'}
+
+            <OwnershipDetail
+              key={selectedUser.userId}
               user={selectedUser}
               unitOwners={unitOwners}
               units={units}
-              onUpdated={(u) => { handleUpdated(u); }}
-              onDeleted={() => { handleDeleted(); setShowMobileDetail(false); }}
+              toast={toast}
               onAssign={handleAssign}
               onUnassign={handleUnassign}
-              toast={toast}
             />
           </div>
         </>
-      )}
-
-      {/* ── Create drawer ── */}
-      {showCreate && (
-        <CreateOwnerDrawer
-          onClose={() => setShowCreate(false)}
-          onCreated={handleCreated}
-        />
-      )}
+      ) : null}
     </>
   );
 }

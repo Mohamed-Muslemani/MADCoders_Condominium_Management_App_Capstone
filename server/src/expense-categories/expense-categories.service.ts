@@ -67,7 +67,9 @@ export class ExpenseCategoriesService {
         data: {
           name: dto.name?.trim(),
           description:
-            dto.description === undefined ? undefined : dto.description.trim() || null,
+            dto.description === undefined
+              ? undefined
+              : dto.description.trim() || null,
         },
         select: safeExpenseCategorySelect,
       });

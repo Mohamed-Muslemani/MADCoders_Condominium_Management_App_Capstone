@@ -1,16 +1,45 @@
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { getCurrentUserProfile } from '../../api/users';
 import { useAuth } from '../../context/auth-provider';
+import type { User } from '../../types/user';
 import { AppNav } from '../AppNav/AppNav';
 import './AppShell.css';
 
 export function AppShell() {
   const navigate = useNavigate();
   const { clearToken } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const currentUser = await getCurrentUserProfile();
+
+        if (!cancelled) {
+          setUser(currentUser);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function handleLogout() {
     clearToken();
     navigate('/login', { replace: true });
   }
+
+  const adminName = user ? `${user.firstName} ${user.lastName}` : 'Admin Workspace';
+  const adminInitial = user?.firstName.trim().charAt(0).toUpperCase() || 'A';
 
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-[#0f172a]">
@@ -46,17 +75,21 @@ export function AppShell() {
               Announcements
             </button>
 
-            <div className="app-profile flex items-center gap-[10px] rounded-[14px] px-[10px] py-2">
+            <button
+              type="button"
+              className="app-profile flex items-center gap-[10px] rounded-[14px] px-[10px] py-2"
+              onClick={() => navigate('/profile')}
+            >
               <div className="app-avatar grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px] font-black text-[#071a33]">
-                A
+                {adminInitial}
               </div>
               <div>
-                <strong className="block text-[13px] text-white">Admin Workspace</strong>
+                <strong className="block text-[13px] text-white">{adminName}</strong>
                 <span className="app-profile-sub block text-[12px] text-white">
-                  Unified condo operations
+                  Manage your account
                 </span>
               </div>
-            </div>
+            </button>
 
             <button
               className="app-btn rounded-[12px] px-3 py-[10px] text-[13px] text-white"

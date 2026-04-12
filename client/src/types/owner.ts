@@ -10,6 +10,7 @@ export const ownerRoutePaths = {
   dues: '/owner/dues',
   maintenance: '/owner/maintenance',
   documents: '/owner/documents',
+  profile: '/owner/profile',
 } as const;
 
 export type OwnerRouteKey = keyof typeof ownerRoutePaths;
@@ -19,6 +20,7 @@ export interface OwnerNavBadgeMap {
   dues?: string;
   maintenance?: string;
   documents?: string;
+  profile?: string;
 }
 
 export interface OwnerLayoutUser

@@ -51,7 +51,11 @@ export class ReserveTransactionsService {
     return this.prisma.reserveTransaction.findMany({
       where,
       select: safeReserveTransactionSelect,
-      orderBy: [{ transactionDate: 'desc' }, { expectedDate: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { transactionDate: 'desc' },
+        { expectedDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
   }
 
@@ -74,10 +78,17 @@ export class ReserveTransactionsService {
     return this.prisma.reserveTransaction.findMany({
       where: {
         type: 'EXPENSE',
-        OR: [{ transactionDate: { lte: today } }, { expectedDate: { lte: today } }],
+        OR: [
+          { transactionDate: { lte: today } },
+          { expectedDate: { lte: today } },
+        ],
       },
       select: safeReserveTransactionSelect,
-      orderBy: [{ transactionDate: 'desc' }, { expectedDate: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { transactionDate: 'desc' },
+        { expectedDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
   }
 
@@ -98,7 +109,11 @@ export class ReserveTransactionsService {
         ],
       },
       select: safeReserveTransactionSelect,
-      orderBy: [{ expectedDate: 'asc' }, { transactionDate: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [
+        { expectedDate: 'asc' },
+        { transactionDate: 'asc' },
+        { createdAt: 'asc' },
+      ],
     });
   }
 
@@ -106,7 +121,11 @@ export class ReserveTransactionsService {
     return this.prisma.reserveTransaction.findMany({
       where: { categoryId },
       select: safeReserveTransactionSelect,
-      orderBy: [{ transactionDate: 'desc' }, { expectedDate: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { transactionDate: 'desc' },
+        { expectedDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
   }
 
@@ -137,7 +156,11 @@ export class ReserveTransactionsService {
         ],
       },
       select: safeReserveTransactionSelect,
-      orderBy: [{ transactionDate: 'desc' }, { expectedDate: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { transactionDate: 'desc' },
+        { expectedDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
   }
 
