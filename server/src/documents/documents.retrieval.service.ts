@@ -105,7 +105,9 @@ export class DocumentsRetrievalService {
         throw error;
       }
 
-      throw new InternalServerErrorException('Failed to generate query embedding');
+      throw new InternalServerErrorException(
+        'Failed to generate query embedding',
+      );
     }
   }
 

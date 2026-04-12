@@ -8,18 +8,19 @@ import {
   Param,
   Post,
   Req,
+  Res,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AskDocumentsDto } from './dto/ask-documents.dto';
-import {
-  CreateDocumentDto,
-} from './dto/create-document.dto';
+import { CreateDocumentDto } from './dto/create-document.dto';
 import { SearchDocumentsDto } from './dto/search-documents.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { DocumentsService } from './documents.service';
@@ -29,6 +30,7 @@ const MAX_PDF_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 type AuthenticatedRequest = {
   user: {
     userId: string;
+    role: 'ADMIN' | 'OWNER';
   };
 };
 
@@ -61,6 +63,28 @@ export class DocumentsController {
   @Get('versions/:versionId')
   async findVersion(@Param('versionId') versionId: string) {
     return this.documentsService.findVersion(versionId);
+  }
+
+  @Get('versions/:versionId/download')
+  @Roles('ADMIN', 'OWNER')
+  async downloadVersion(
+    @Param('versionId') versionId: string,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.documentsService.getVersionDownload(
+      versionId,
+      req.user,
+    );
+
+    res.setHeader('Content-Type', result.mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(result.originalName)}"`,
+    );
+    res.setHeader('Content-Length', String(result.sizeBytes));
+
+    return new StreamableFile(result.stream);
   }
 
   @Post('versions/:versionId/reprocess')

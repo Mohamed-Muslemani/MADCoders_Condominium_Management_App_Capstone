@@ -21,9 +21,7 @@ import { ReserveTransactionsService } from './reserve-transactions.service';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Controller('reserve-transactions')
 export class ReserveTransactionsController {
-  constructor(
-    private reserveTransactionsService: ReserveTransactionsService,
-  ) {}
+  constructor(private reserveTransactionsService: ReserveTransactionsService) {}
 
   @Get()
   async findAll(@Query() query: QueryReserveTransactionsDto) {

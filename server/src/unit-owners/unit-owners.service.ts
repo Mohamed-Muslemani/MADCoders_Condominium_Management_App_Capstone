@@ -107,7 +107,9 @@ export class UnitOwnersService {
           ? dto.startDate
           : existing.startDate.toISOString();
       const endDate =
-        dto.endDate !== undefined ? dto.endDate : existing.endDate?.toISOString();
+        dto.endDate !== undefined
+          ? dto.endDate
+          : existing.endDate?.toISOString();
       this.validateDateRange(startDate, endDate);
     }
 

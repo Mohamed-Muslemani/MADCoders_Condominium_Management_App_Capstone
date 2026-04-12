@@ -2,18 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getOwnerDashboard,
-} from '../api/owner';
-import { OwnerLayout } from '../components/owner/OwnerLayout';
+} from '../../api/owner';
+import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
   OwnerActionButton,
   OwnerEmptyState,
   OwnerStatusPill,
   OwnerViewState,
-} from '../components/owner/OwnerUi';
-import { useAuth } from '../context/auth-provider';
-import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../types/owner';
-import type { User } from '../types/user';
-import './owner-dashboard.css';
+} from '../../components/owner/OwnerUi';
+import { useAuth } from '../../context/auth-provider';
+import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../../types/owner';
+import type { User } from '../../types/user';
+import './OwnerDashboardPage.css';
 
 function formatDate(value?: string | null) {
   if (!value) {

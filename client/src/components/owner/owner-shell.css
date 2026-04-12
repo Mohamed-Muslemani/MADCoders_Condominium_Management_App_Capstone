@@ -94,6 +94,17 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.owner-shell-profile-link {
+  text-decoration: none;
+  color: inherit;
+  transition: 0.15s ease;
+}
+
+.owner-shell-profile-link:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
 .owner-shell-avatar {
   width: 34px;
   height: 34px;
@@ -343,6 +354,8 @@
   font-size: 13px;
   letter-spacing: -0.01em;
   color: #0f172a;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .owner-shell-empty,

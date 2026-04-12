@@ -8,9 +8,11 @@ const ownerNavItems: Array<{ key: OwnerRouteKey; label: string }> = [
   { key: 'dues', label: 'Dues' },
   { key: 'maintenance', label: 'Maintenance' },
   { key: 'documents', label: 'Documents' },
+  { key: 'profile', label: 'Profile' },
 ];
 
 export function OwnerSidebar({
+  activeRoute,
   badges,
 }: {
   activeRoute: OwnerRouteKey;
@@ -36,7 +38,7 @@ export function OwnerSidebar({
               to={ownerRoutePaths[item.key]}
               end
               className={({ isActive }) =>
-                ['owner-shell-nav-link', isActive && 'active']
+                ['owner-shell-nav-link', (isActive || activeRoute === item.key) && 'active']
                   .filter(Boolean)
                   .join(' ')
               }
@@ -52,10 +54,6 @@ export function OwnerSidebar({
         })}
 
         <div className="owner-shell-divider" />
-
-        <div className="owner-shell-nav-link">
-          Profile
-        </div>
         <button
           type="button"
           className="owner-shell-nav-link"

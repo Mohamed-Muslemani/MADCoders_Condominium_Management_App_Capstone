@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const safeUserSelect = {
@@ -240,7 +237,9 @@ export class OwnerService {
     return {
       currentBalance,
       currentStatus: currentBalance > 0 ? 'UNPAID' : 'PAID',
-      monthlyFee: activeOwnership ? Number(activeOwnership.unit.monthlyFee) : null,
+      monthlyFee: activeOwnership
+        ? Number(activeOwnership.unit.monthlyFee)
+        : null,
       nextDueDate: nextDue?.dueDate ?? null,
       unpaidCount: unpaidDues.length,
     };

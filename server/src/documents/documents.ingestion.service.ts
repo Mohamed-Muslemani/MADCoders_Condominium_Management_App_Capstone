@@ -40,7 +40,8 @@ export class DocumentIngestionService {
     }
 
     if (!this.isPdf(version.file.mimeType, version.file.originalName)) {
-      const errorMessage = 'Only PDF files are supported for document ingestion';
+      const errorMessage =
+        'Only PDF files are supported for document ingestion';
       await this.markFailed(versionId, errorMessage);
       throw new UnsupportedMediaTypeException(errorMessage);
     }

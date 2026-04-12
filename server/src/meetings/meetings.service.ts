@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentsService } from '../documents/documents.service';
-import { DocumentType, DocumentVisibility } from '../documents/dto/create-document.dto';
+import {
+  DocumentType,
+  DocumentVisibility,
+} from '../documents/dto/create-document.dto';
 import { CreateMeetingDto } from './dto/create-meeting.dto';
 import { UpdateMeetingDto } from './dto/update-meeting.dto';
 

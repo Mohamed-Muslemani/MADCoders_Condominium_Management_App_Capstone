@@ -4,27 +4,27 @@ import {
   getOwnerMaintenanceRequests,
   submitOwnerMaintenanceRequest,
   uploadOwnerMaintenanceAttachment,
-} from '../api/owner';
+} from '../../api/owner';
 import {
   deleteMaintenanceRequest,
   updateMaintenanceRequest,
-} from '../api/maintenanceRequests';
-import { OwnerLayout } from '../components/owner/OwnerLayout';
+} from '../../api/maintenanceRequests';
+import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
   OwnerActionButton,
   OwnerCard,
   OwnerEmptyState,
   OwnerStatusPill,
   OwnerViewState,
-} from '../components/owner/OwnerUi';
+} from '../../components/owner/OwnerUi';
 import type {
   CreateMaintenanceRequestRequest,
   MaintenancePriority,
   MaintenanceRequest,
   MaintenanceScope,
-} from '../types/maintenance-request';
-import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../types/owner';
-import './owner-maintenance.css';
+} from '../../types/maintenance-request';
+import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../../types/owner';
+import './OwnerMaintenancePage.css';
 
 type FormState = {
   title: string;
@@ -456,10 +456,8 @@ export function OwnerMaintenancePage() {
                   </div>
 
                   <div className="owner-maintenance-note">
-                    The mock includes extra fields like area and preferred access.
-                    Those are not yet supported by the current backend, but file
-                    attachments are now supported and shown here after upload. Open
-                    requests can also be clicked to edit them.
+                    Open requests can be clicked to edit them, and uploaded
+                    attachments appear directly on each request card.
                   </div>
                 </>
               )}
@@ -589,8 +587,8 @@ export function OwnerMaintenancePage() {
 
               <div className="owner-maintenance-help">
                 {editingRequest
-                  ? 'Open requests can be updated here. You can also attach one additional file in this edit flow.'
-                  : 'The current backend supports one uploaded attachment per submit flow here. Area labels like hallway or elevator and preferred access are still not supported yet.'}
+                  ? 'Open requests can be updated here, and you can attach one additional file during this edit.'
+                  : 'Submit the request here and optionally include one photo or PDF attachment.'}
               </div>
             </div>
 

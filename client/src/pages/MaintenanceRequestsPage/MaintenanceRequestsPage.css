@@ -157,6 +157,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .row-inline-tags {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
   .row-meta {
     display: flex;
     flex-wrap: wrap;
@@ -330,6 +336,82 @@
     box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
   }
   .form-textarea { min-height: 92px; resize: vertical; }
+  .maint-attachment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .maint-attachment-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid #e5eaf3;
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px 12px;
+  }
+  .maint-attachment-meta {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .maint-attachment-meta strong {
+    font-size: 13px;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .maint-attachment-meta span {
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+  }
+  .maint-attachment-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .maint-attachment-empty {
+    border: 1px dashed #dbe7ff;
+    border-radius: 14px;
+    background: #fff;
+    padding: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+  }
+  .maint-attachment-upload {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+  }
+  .maint-file-input {
+    width: 100%;
+    border: 1px dashed #cfe0ff;
+    background: #f7faff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #0f172a;
+  }
+  .maint-attachment-upload-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .maint-attachment-help {
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+    min-width: 0;
+    word-break: break-word;
+  }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .field-err {
     margin-top: 6px;
@@ -382,6 +464,13 @@
     .list-scroll { max-height: none; }
     .row-card { grid-template-columns: 1fr; }
     .row-right { justify-content: flex-start; }
+    .maint-attachment-card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .maint-attachment-actions {
+      justify-content: flex-start;
+    }
   }
   @media (max-width: 520px) {
     .maint-toolbar { grid-template-columns: 1fr; }

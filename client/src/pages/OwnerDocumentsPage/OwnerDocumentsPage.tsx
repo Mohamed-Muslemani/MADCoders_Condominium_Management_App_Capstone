@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getOwnerDashboard, getOwnerDocuments } from '../api/owner';
-import { OwnerLayout } from '../components/owner/OwnerLayout';
+import { getOwnerDashboard, getOwnerDocuments } from '../../api/owner';
+import { downloadDocumentVersion } from '../../api/documents';
+import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
   OwnerActionButton,
   OwnerCard,
   OwnerEmptyState,
   OwnerStatusPill,
   OwnerViewState,
-} from '../components/owner/OwnerUi';
-import type { DocumentSummary } from '../types/document';
-import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../types/owner';
-import './owner-documents.css';
+} from '../../components/owner/OwnerUi';
+import type { DocumentSummary } from '../../types/document';
+import type { OwnerDashboardResponse, OwnerNavBadgeMap } from '../../types/owner';
+import './OwnerDocumentsPage.css';
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -37,6 +38,7 @@ export function OwnerDocumentsPage() {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
 
   async function loadPage() {
     try {
@@ -64,6 +66,37 @@ export function OwnerDocumentsPage() {
   useEffect(() => {
     void loadPage();
   }, []);
+
+  async function handleFileAction(
+    versionId: string,
+    mode: 'open' | 'download',
+  ) {
+    try {
+      setActiveVersionId(versionId);
+      const { blob, filename, mimeType } = await downloadDocumentVersion(versionId);
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (mode === 'open' && mimeType.includes('pdf')) {
+        window.open(objectUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        return;
+      }
+
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Could not access this document.',
+      );
+    } finally {
+      setActiveVersionId(null);
+    }
+  }
 
   const user = dashboard?.profile ?? null;
   const activeUnit = dashboard?.activeOwnership?.unit ?? null;
@@ -141,6 +174,12 @@ export function OwnerDocumentsPage() {
           />
         </section>
 
+        {error ? (
+          <div className="owner-documents-error">
+            {error}
+          </div>
+        ) : null}
+
         <div className="owner-documents-content">
           <OwnerCard title="Owner Library">
             {documents.length === 0 ? (
@@ -186,17 +225,30 @@ export function OwnerDocumentsPage() {
                           </div>
                         </div>
 
-                        <OwnerStatusPill
-                          label={currentVersion ? 'Listed' : 'No file yet'}
-                          tone={currentVersion ? 'good' : 'warn'}
-                        />
+                        <div className="owner-documents-actions">
+                          <OwnerStatusPill
+                            label={currentVersion ? 'Ready' : 'No file yet'}
+                            tone={currentVersion ? 'good' : 'warn'}
+                          />
+                          {currentVersion ? (
+                            <div className="owner-documents-action-row">
+                              <OwnerActionButton
+                                onClick={() => void handleFileAction(currentVersion.versionId, 'open')}
+                              >
+                                {activeVersionId === currentVersion.versionId ? 'Opening...' : 'Open'}
+                              </OwnerActionButton>
+                              <OwnerActionButton
+                                variant="primary"
+                                onClick={() => void handleFileAction(currentVersion.versionId, 'download')}
+                              >
+                                {activeVersionId === currentVersion.versionId ? 'Preparing...' : 'Download'}
+                              </OwnerActionButton>
+                            </div>
+                          ) : null}
+                        </div>
                       </article>
                     );
                   })}
-                </div>
-
-                <div className="owner-documents-item-copy">
-                  Document listing is live. Safe owner download and preview links are still the next backend step if you want owners to open files directly from this page.
                 </div>
               </>
             )}

@@ -1,0 +1,126 @@
+.owner-profile-page {
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  min-height: 100%;
+}
+
+.owner-profile-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.owner-profile-hero h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 950;
+  color: #0f172a;
+}
+
+.owner-profile-hero p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.owner-profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr);
+  gap: 16px;
+}
+
+.owner-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.owner-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.owner-profile-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.owner-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.owner-profile-field span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #64748b;
+}
+
+.owner-profile-field input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.owner-profile-field input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.owner-profile-field input[disabled] {
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.owner-profile-stats .owner-shell-stat-card {
+  min-width: 0;
+}
+
+.owner-profile-stats .owner-shell-stat-card strong {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.owner-profile-success {
+  border: 1px solid #bbf7d0;
+  background: #ecfdf3;
+  color: #166534;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+@media (max-width: 960px) {
+  .owner-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .owner-profile-page {
+    padding: 14px;
+  }
+
+  .owner-profile-stats,
+  .owner-profile-field-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -70,11 +70,15 @@ export class DocumentsQaService {
       relevantChunks,
     );
 
-    const citations = this.mapCitations(modelResponse.citations, relevantChunks);
+    const citations = this.mapCitations(
+      modelResponse.citations,
+      relevantChunks,
+    );
 
     return {
       answer:
-        modelResponse.answer.trim() || 'No relevant information found in documents',
+        modelResponse.answer.trim() ||
+        'No relevant information found in documents',
       citations,
     };
   }
@@ -117,7 +121,9 @@ export class DocumentsQaService {
       return JSON.parse(response.output_text) as QaModelResponse;
     } catch (error) {
       console.error('DOCUMENT QA ERROR:', error);
-      throw new InternalServerErrorException('Failed to generate document answer');
+      throw new InternalServerErrorException(
+        'Failed to generate document answer',
+      );
     }
   }
 

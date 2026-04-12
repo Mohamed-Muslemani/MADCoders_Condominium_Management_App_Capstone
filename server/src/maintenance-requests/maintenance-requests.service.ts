@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash, randomUUID } from 'crypto';
-import { promises as fs } from 'fs';
+import { createReadStream, promises as fs } from 'fs';
 import { extname, join } from 'path';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -178,7 +178,9 @@ export class MaintenanceRequestsService {
     }
 
     if (scope === 'BUILDING' && dto.unitId) {
-      throw new BadRequestException('unitId must be omitted for BUILDING scope');
+      throw new BadRequestException(
+        'unitId must be omitted for BUILDING scope',
+      );
     }
 
     try {
@@ -259,7 +261,55 @@ export class MaintenanceRequestsService {
     }
   }
 
-  async update(authUser: AuthUser, requestId: string, dto: UpdateMaintenanceRequestDto) {
+  async getAttachmentDownload(authUser: AuthUser, fileId: string) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        fileId,
+        links: {
+          some: {
+            relatedType: 'MAINTENANCE_REQUEST',
+          },
+        },
+      },
+      select: {
+        originalName: true,
+        mimeType: true,
+        sizeBytes: true,
+        storagePath: true,
+        links: {
+          where: {
+            relatedType: 'MAINTENANCE_REQUEST',
+          },
+          select: {
+            relatedId: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          take: 1,
+        },
+      },
+    });
+
+    if (!file || file.links.length === 0) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    await this.findAccessibleRequest(authUser, file.links[0].relatedId);
+
+    return {
+      originalName: file.originalName,
+      mimeType: file.mimeType,
+      sizeBytes: Number(file.sizeBytes),
+      stream: createReadStream(file.storagePath),
+    };
+  }
+
+  async update(
+    authUser: AuthUser,
+    requestId: string,
+    dto: UpdateMaintenanceRequestDto,
+  ) {
     const existing = await this.prisma.maintenanceRequest.findUnique({
       where: { requestId },
       select: {
@@ -288,7 +338,9 @@ export class MaintenanceRequestsService {
     }
 
     if (!isAdmin && (dto.scope !== undefined || dto.unitId !== undefined)) {
-      throw new ForbiddenException('Owners cannot change request scope or unit');
+      throw new ForbiddenException(
+        'Owners cannot change request scope or unit',
+      );
     }
 
     if (isAdmin) {
@@ -405,7 +457,9 @@ export class MaintenanceRequestsService {
     });
 
     if (!ownership) {
-      throw new ForbiddenException('You do not have active ownership for this unit');
+      throw new ForbiddenException(
+        'You do not have active ownership for this unit',
+      );
     }
   }
 
@@ -483,7 +537,10 @@ export class MaintenanceRequestsService {
     return request;
   }
 
-  private async findRequestEditableByUser(authUser: AuthUser, requestId: string) {
+  private async findRequestEditableByUser(
+    authUser: AuthUser,
+    requestId: string,
+  ) {
     const existing = await this.prisma.maintenanceRequest.findUnique({
       where: { requestId },
       select: {
@@ -501,7 +558,9 @@ export class MaintenanceRequestsService {
       authUser.role !== 'ADMIN' &&
       existing.submittedByUserId !== authUser.userId
     ) {
-      throw new ForbiddenException('You can only upload files to your own requests');
+      throw new ForbiddenException(
+        'You can only upload files to your own requests',
+      );
     }
 
     if (authUser.role !== 'ADMIN' && existing.status !== 'OPEN') {
@@ -602,7 +661,8 @@ export class MaintenanceRequestsService {
     const uploadDir = join(process.cwd(), 'storage', 'maintenance-attachments');
     await fs.mkdir(uploadDir, { recursive: true });
 
-    const extension = extname(file.originalname) || this.fallbackExtension(file.mimetype);
+    const extension =
+      extname(file.originalname) || this.fallbackExtension(file.mimetype);
     const filename = `${Date.now()}-${randomUUID()}${extension}`;
     const storagePath = join(uploadDir, filename);
     const sha256Hash = createHash('sha256').update(file.buffer).digest('hex');

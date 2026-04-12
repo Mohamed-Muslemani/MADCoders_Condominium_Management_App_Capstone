@@ -7,6 +7,7 @@ import {
   updateDocument,
   deleteDocument,
   uploadDocumentVersion,
+  downloadDocumentVersion,
   generateDocumentEmbeddings,
   askDocuments,
 } from '../../api/documents';
@@ -314,6 +315,7 @@ export function DocumentsPage() {
   const [drawer,  setDrawer]  = useState(false);
   const [mode,    setMode]    = useState<'create' | 'edit'>('create');
   const [active,  setActive]  = useState<DocumentSummary | null>(null);
+  const [downloadingVersionId, setDownloadingVersionId] = useState<string | null>(null);
 
   /* Ask AI */
   const [askOpen,    setAskOpen]    = useState(false);
@@ -405,6 +407,33 @@ export function DocumentsPage() {
       setAskResult(result);
     } catch { setAskError('Could not get answer. Make sure documents are indexed.'); }
     finally { setAskLoading(false); }
+  }
+
+  async function handleFileAction(
+    versionId: string,
+    mode: 'open' | 'download',
+  ) {
+    try {
+      setDownloadingVersionId(versionId);
+      const { blob, filename, mimeType } = await downloadDocumentVersion(versionId);
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (mode === 'open' && mimeType.includes('pdf')) {
+        window.open(objectUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        return;
+      }
+
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      showToast('Could not open document.');
+    } finally {
+      setDownloadingVersionId(null);
+    }
   }
 
   return (
@@ -549,6 +578,34 @@ export function DocumentsPage() {
                       </div>
                     </div>
                     <div className="doc-actions">
+                      {(d.versions.find(v => v.isCurrent) ?? d.versions[0]) ? (
+                        <>
+                          <button
+                            className="icon-btn text-[12px]"
+                            title="Open"
+                            onClick={() =>
+                              void handleFileAction(
+                                (d.versions.find(v => v.isCurrent) ?? d.versions[0]).versionId,
+                                'open',
+                              )
+                            }
+                          >
+                            {downloadingVersionId === (d.versions.find(v => v.isCurrent) ?? d.versions[0]).versionId ? '…' : 'Open'}
+                          </button>
+                          <button
+                            className="icon-btn text-[12px]"
+                            title="Download"
+                            onClick={() =>
+                              void handleFileAction(
+                                (d.versions.find(v => v.isCurrent) ?? d.versions[0]).versionId,
+                                'download',
+                              )
+                            }
+                          >
+                            ↓
+                          </button>
+                        </>
+                      ) : null}
                       <button className="icon-btn" title="Edit" onClick={() => openEdit(d)}>✎</button>
                     </div>
                   </div>

@@ -111,15 +111,22 @@
     background: linear-gradient(135deg, var(--steel), var(--steel2));
   }
   
-  .app-profile {
-    display: flex;
-    align-items: center;
+.app-profile {
+  display: flex;
+  align-items: center;
     gap: 10px;
     padding: 8px 10px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.1);
-  }
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.app-profile:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+}
   
   .app-avatar {
     width: 34px;
