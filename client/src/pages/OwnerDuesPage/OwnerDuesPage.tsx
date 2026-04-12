@@ -106,7 +106,7 @@ export function OwnerDuesPage() {
       maintenance: dashboard?.maintenance.length
         ? `${dashboard.maintenance.length} total`
         : '0 total',
-      documents: 'Owners',
+      documents: `${dashboard?.documentsSummary.availableCount ?? 0} docs`,
     }),
     [dashboard, duesSummary],
   );

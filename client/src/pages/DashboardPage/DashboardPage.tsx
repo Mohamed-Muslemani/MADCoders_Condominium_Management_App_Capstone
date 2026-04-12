@@ -46,9 +46,11 @@ export function DashboardPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [transactions,  setTransactions]  = useState<ReserveTransaction[]>([]);
   const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState('');
 
   const fetchAll = useCallback(() => {
     setLoading(true);
+    setError('');
     Promise.all([
       getUnits(),
       getUnitOwners(),
@@ -66,6 +68,7 @@ export function DashboardPage() {
       setLoading(false);
     }).catch((err) => {
       console.error('Dashboard fetch error:', err);
+      setError('Could not load the latest dashboard data.');
       setLoading(false);
     });
   }, []);
@@ -87,6 +90,31 @@ export function DashboardPage() {
   const healthScore = dues.length > 0
     ? Math.max(0, Math.round(100 - (missedPayments / dues.length) * 100))
     : 100;
+
+  const openRequestCount = requests.filter(
+    (request) => request.status === 'OPEN' || request.status === 'IN_PROGRESS',
+  ).length;
+
+  const healthStatus =
+    healthScore >= 90 && openRequestCount <= 2
+      ? 'Healthy'
+      : healthScore >= 70 && openRequestCount <= 6
+        ? 'Needs attention'
+        : 'At risk';
+
+  const healthToneClasses =
+    healthStatus === 'Healthy'
+      ? 'border-[#bbf7d0] bg-[#ecfdf3] text-[#166534]'
+      : healthStatus === 'Needs attention'
+        ? 'border-[#fde68a] bg-[#fffbeb] text-[#92400e]'
+        : 'border-[#fecaca] bg-[#fef2f2] text-[#991b1b]';
+
+  const healthSummary =
+    healthStatus === 'Healthy'
+      ? `${missedPayments} unpaid dues and ${openRequestCount} active maintenance requests right now.`
+      : healthStatus === 'Needs attention'
+        ? `${missedPayments} unpaid dues and ${openRequestCount} active maintenance requests need follow-up.`
+        : `${missedPayments} unpaid dues and ${openRequestCount} active maintenance requests are pulling the score down.`;
 
   const monthlyBalance = (() => {
     const posted = transactions
@@ -115,11 +143,19 @@ export function DashboardPage() {
     .slice(0, 5);
 
   const recentRequests = [...requests]
-    .sort((a, b) => b.requestId.localeCompare(a.requestId))
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt ?? b.createdAt).getTime() -
+        new Date(a.updatedAt ?? a.createdAt).getTime(),
+    )
     .slice(0, 3);
 
   const latestAnnouncements = [...announcements]
-    .sort((a, b) => b.announcementId.localeCompare(a.announcementId))
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt ?? b.createdAt).getTime() -
+        new Date(a.publishedAt ?? a.createdAt).getTime(),
+    )
     .slice(0, 3);
 
   /* ── charts ── */
@@ -216,8 +252,8 @@ export function DashboardPage() {
               <small className="block text-[12px] text-[#64748b]">Building Health Score</small>
             </div>
             <div className="flex items-center gap-2">
-              <span className="whitespace-nowrap rounded-full border border-[#bbf7d0] bg-[#ecfdf3] px-[10px] py-[3px] text-[11px] font-black text-[#166534]">
-                Healthy
+              <span className={`whitespace-nowrap rounded-full border px-[10px] py-[3px] text-[11px] font-black ${healthToneClasses}`}>
+                {healthStatus}
               </span>
               <button
                 onClick={fetchAll}
@@ -230,10 +266,16 @@ export function DashboardPage() {
             </div>
           </div>
           <small className="mt-[6px] block text-[12px] leading-[1.35] text-[#64748b]">
-            Strong reserve fund and low late payments compared to last month.
+            {healthSummary}
           </small>
         </div>
       </section>
+
+      {error ? (
+        <div className="mt-3 rounded-[12px] border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[13px] font-black text-[#991b1b]">
+          {error}
+        </div>
+      ) : null}
 
       {/* ── 12-col grid ── */}
       <div className="mt-[14px] grid grid-cols-12 gap-[14px]">

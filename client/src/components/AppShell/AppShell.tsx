@@ -14,7 +14,7 @@ export function AppShell() {
   useEffect(() => {
     let cancelled = false;
 
-    void (async () => {
+    async function loadCurrentUser() {
       try {
         const currentUser = await getCurrentUserProfile();
 
@@ -26,10 +26,19 @@ export function AppShell() {
           setUser(null);
         }
       }
-    })();
+    }
+
+    void loadCurrentUser();
+
+    function handleProfileUpdated() {
+      void loadCurrentUser();
+    }
+
+    window.addEventListener('admin-profile-updated', handleProfileUpdated);
 
     return () => {
       cancelled = true;
+      window.removeEventListener('admin-profile-updated', handleProfileUpdated);
     };
   }, []);
 

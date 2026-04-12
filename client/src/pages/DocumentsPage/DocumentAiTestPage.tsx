@@ -105,10 +105,9 @@ function DocDrawer({
     if (!title.trim()) errs.title = 'Title is required.';
     if (!isEdit && !file) errs.file = 'File is required.';
     if (file) {
-      const allowed = ['application/pdf','application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain'];
+      const allowed = ['application/pdf'];
       if (file.size > 10 * 1024 * 1024) errs.file = 'File too large. Max 10MB.';
-      else if (file.type && !allowed.includes(file.type)) errs.file = 'Use PDF/DOC/DOCX/TXT.';
+      else if (file.type && !allowed.includes(file.type)) errs.file = 'Use PDF.';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -212,12 +211,12 @@ function DocDrawer({
             {/* File */}
             <div className="mt-[10px]">
               <label className="form-label">
-                {isEdit ? 'Upload New Version (PDF/DOC/DOCX/TXT)' : 'File *'}
+                {isEdit ? 'Upload New Version (PDF)' : 'File *'}
               </label>
               <input
                 className="form-file"
                 type="file"
-                accept=".pdf,.doc,.docx,.txt"
+                accept=".pdf,application/pdf"
                 onChange={e => setFile(e.target.files?.[0] ?? null)}
               />
               {errors.file && <div className="field-err">{errors.file}</div>}

@@ -150,11 +150,16 @@ export interface OwnerDuesSummary {
   unpaidCount: number;
 }
 
+export interface OwnerDocumentsSummary {
+  availableCount: number;
+}
+
 export interface OwnerDashboardResponse {
   profile: User;
   activeOwnership?: OwnerDashboardActiveOwnership | null;
   dues: UnitDue[];
   duesSummary: OwnerDuesSummary;
+  documentsSummary: OwnerDocumentsSummary;
   announcements: Announcement[];
   maintenance: MaintenanceRequest[];
 }

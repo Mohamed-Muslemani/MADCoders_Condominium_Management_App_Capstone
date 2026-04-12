@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getOwnerDashboard, getOwnerDocuments } from '../../api/owner';
+import {
+  askOwnerDocuments,
+  getOwnerDashboard,
+  getOwnerDocuments,
+} from '../../api/owner';
 import { downloadDocumentVersion } from '../../api/documents';
 import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
@@ -39,6 +43,17 @@ export function OwnerDocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
+  const [question, setQuestion] = useState('');
+  const [askLoading, setAskLoading] = useState(false);
+  const [askError, setAskError] = useState('');
+  const [askResult, setAskResult] = useState<{
+    answer: string;
+    citations: Array<{
+      documentTitle: string;
+      pageStart?: number | null;
+      pageEnd?: number | null;
+    }>;
+  } | null>(null);
 
   async function loadPage() {
     try {
@@ -98,6 +113,29 @@ export function OwnerDocumentsPage() {
     }
   }
 
+  async function handleAsk() {
+    if (!question.trim()) {
+      return;
+    }
+
+    try {
+      setAskLoading(true);
+      setAskError('');
+      setAskResult(null);
+
+      const result = await askOwnerDocuments({ query: question.trim() });
+      setAskResult(result);
+    } catch (requestError) {
+      setAskError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Could not search your indexed documents right now.',
+      );
+    } finally {
+      setAskLoading(false);
+    }
+  }
+
   const user = dashboard?.profile ?? null;
   const activeUnit = dashboard?.activeOwnership?.unit ?? null;
 
@@ -110,9 +148,9 @@ export function OwnerDocumentsPage() {
       maintenance: dashboard?.maintenance.length
         ? `${dashboard.maintenance.length} total`
         : '0 total',
-      documents: 'Owners',
+      documents: `${documents.length} docs`,
     }),
-    [dashboard],
+    [dashboard, documents.length],
   );
 
   if (loading) {
@@ -165,7 +203,7 @@ export function OwnerDocumentsPage() {
         <section className="owner-documents-hero">
           <div>
             <h2>Documents</h2>
-            <p>Owner-safe document library using the backend document visibility rules.</p>
+            <p>Your document library with files shared for owner access.</p>
           </div>
 
           <OwnerStatusPill
@@ -181,6 +219,71 @@ export function OwnerDocumentsPage() {
         ) : null}
 
         <div className="owner-documents-content">
+          <OwnerCard
+            title="Ask AI"
+            badge="Indexed owner docs"
+            action={
+              <OwnerStatusPill
+                label="Owner-safe search"
+                tone="good"
+              />
+            }
+          >
+            <div className="owner-documents-ai-copy">
+              Ask a question about the indexed documents available to your owner account.
+            </div>
+
+            <div className="owner-documents-ai-row">
+              <textarea
+                className="owner-documents-ai-input"
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="What do the condo documents say about pets, parking, or move-ins?"
+                rows={3}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleAsk();
+                  }
+                }}
+              />
+
+              <OwnerActionButton
+                variant="primary"
+                onClick={() => void handleAsk()}
+              >
+                {askLoading ? 'Searching...' : 'Ask AI'}
+              </OwnerActionButton>
+            </div>
+
+            {askError ? (
+              <div className="owner-documents-ai-error">{askError}</div>
+            ) : null}
+
+            {askResult ? (
+              <div className="owner-documents-ai-result">
+                <div className="owner-documents-ai-answer">{askResult.answer}</div>
+
+                {askResult.citations.length > 0 ? (
+                  <div className="owner-documents-ai-citations">
+                    <div className="owner-documents-ai-citation-label">Sources</div>
+                    {askResult.citations.map((citation, index) => (
+                      <div
+                        key={`${citation.documentTitle}-${citation.pageStart ?? 'na'}-${index}`}
+                        className="owner-documents-ai-citation"
+                      >
+                        {citation.documentTitle}
+                        {citation.pageStart != null
+                          ? ` • p.${citation.pageStart}${citation.pageEnd && citation.pageEnd !== citation.pageStart ? `-${citation.pageEnd}` : ''}`
+                          : ''}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </OwnerCard>
+
           <OwnerCard title="Owner Library">
             {documents.length === 0 ? (
               <OwnerEmptyState
