@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUserProfile } from '../../api/users';
 import { useAuth } from '../../context/auth-provider';
 import type { User } from '../../types/user';
@@ -7,6 +7,7 @@ import { AppNav } from '../AppNav/AppNav';
 import './AppShell.css';
 
 export function AppShell() {
+  const location = useLocation();
   const navigate = useNavigate();
   const { clearToken } = useAuth();
   const [user, setUser] = useState<User | null>(null);
@@ -49,15 +50,22 @@ export function AppShell() {
 
   const adminName = user ? `${user.firstName} ${user.lastName}` : 'Admin Workspace';
   const adminInitial = user?.firstName.trim().charAt(0).toUpperCase() || 'A';
+  const topAction = getTopAction(location.pathname);
+
+  function handleTopAction() {
+    if (topAction.type === 'event') {
+      window.dispatchEvent(new Event(topAction.eventName));
+      return;
+    }
+
+    navigate(topAction.to);
+  }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb] text-[#0f172a]">
-      <header
-        className="sticky top-0 z-50 border-b border-white/10 text-white"
-        style={{ background: 'linear-gradient(90deg, #071a33, #0b2b55)' }}
-      >
-        <div className="app-header-inner mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-[18px] py-[14px]">
-          <div className="flex min-w-[250px] shrink-0 items-center gap-3">
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="app-header-inner">
+          <Link to="/dashboard" className="app-brand-link">
             <div className="app-logo h-[40px] w-[40px] shrink-0 overflow-hidden rounded-[14px]">
               <img
                 src="/CMLogo.png"
@@ -73,35 +81,35 @@ export function AppShell() {
                 Admin Portal
               </span>
             </div>
-          </div>
+          </Link>
 
-          <div className="app-header-actions flex min-w-[320px] items-center justify-end gap-[10px]">
+          <div className="app-header-actions">
             <button
               type="button"
-              className="app-btn app-btn-primary rounded-[12px] px-3 py-[10px] text-[13px] text-white"
-              onClick={() => navigate('/announcements')}
+              className="app-btn app-btn-primary"
+              onClick={handleTopAction}
             >
-              Announcements
+              {topAction.label}
             </button>
 
             <button
               type="button"
-              className="app-profile flex items-center gap-[10px] rounded-[14px] px-[10px] py-2"
+              className="app-profile"
               onClick={() => navigate('/profile')}
             >
-              <div className="app-avatar grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px] font-black text-[#071a33]">
+              <div className="app-avatar">
                 {adminInitial}
               </div>
               <div>
-                <strong className="block text-[13px] text-white">{adminName}</strong>
-                <span className="app-profile-sub block text-[12px] text-white">
+                <strong>{adminName}</strong>
+                <span className="app-profile-sub">
                   Manage your account
                 </span>
               </div>
             </button>
 
             <button
-              className="app-btn rounded-[12px] px-3 py-[10px] text-[13px] text-white"
+              className="app-btn"
               onClick={handleLogout}
             >
               Logout
@@ -111,14 +119,44 @@ export function AppShell() {
       </header>
 
       <div className="app-body">
-        <aside className="min-w-0">
+        <aside className="app-sidebar">
           <AppNav />
         </aside>
 
-        <main className="min-w-0 rounded-[16px] border border-[#e5eaf3] bg-white p-[14px] shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+        <main className="app-main">
           <Outlet />
         </main>
       </div>
     </div>
   );
+}
+
+function getTopAction(pathname: string) {
+  const pageActions: Array<{ match: string; label: string; eventName: string }> = [
+    { match: '/announcements', label: '+ New Announcement', eventName: 'admin-announcements-create' },
+    { match: '/users', label: '+ New User', eventName: 'admin-users-create' },
+    { match: '/units', label: '+ Create Unit', eventName: 'admin-units-create' },
+    { match: '/unit-dues', label: '+ Create Due', eventName: 'admin-payments-create' },
+    { match: '/reserve-transactions', label: '+ Add Expense', eventName: 'admin-expenses-create' },
+    { match: '/expense-categories', label: '+ New Category', eventName: 'admin-categories-create' },
+    { match: '/maintenance-requests', label: '+ New Request', eventName: 'admin-maintenance-create' },
+    { match: '/meetings', label: '+ New Meeting', eventName: 'admin-meetings-create' },
+    { match: '/ai-documents', label: '+ Upload', eventName: 'admin-documents-create' },
+  ];
+
+  const matchedAction = pageActions.find((action) => pathname.startsWith(action.match));
+
+  if (matchedAction) {
+    return {
+      label: matchedAction.label,
+      type: 'event' as const,
+      eventName: matchedAction.eventName,
+    };
+  }
+
+  return {
+    label: 'Announcements',
+    type: 'route' as const,
+    to: '/announcements',
+  };
 }

@@ -340,6 +340,18 @@ export function DocumentsPage() {
 
   useEffect(() => { fetchAll(); }, [location.key]);
 
+  useEffect(() => {
+    function handleCreateEvent() {
+      openCreate();
+    }
+
+    window.addEventListener('admin-documents-create', handleCreateEvent);
+
+    return () => {
+      window.removeEventListener('admin-documents-create', handleCreateEvent);
+    };
+  }, []);
+
   const filtered = documents.filter(d => {
     const s = search.toLowerCase();
     return (
@@ -439,10 +451,10 @@ export function DocumentsPage() {
     <>
       {/* ── Hero ── */}
       <section
-        className="rounded-[18px] border border-[#e5eaf3] p-4"
+        className="rounded-[18px] border border-[#e5eaf3] p-[14px]"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
       >
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
               Documents
@@ -550,9 +562,14 @@ export function DocumentsPage() {
                 <strong>{g.category}</strong>
                 <span className="group-count">{g.items.length}</span>
               </div>
-              <div className="group-body">
-                {g.items.map(d => (
-                  <div key={d.documentId} className="doc-row">
+                <div className="group-body">
+                  {g.items.map(d => (
+                  <button
+                    key={d.documentId}
+                    type="button"
+                    className="doc-row"
+                    onClick={() => openEdit(d)}
+                  >
                     <div className="doc-left">
                       <div className="doc-title">{d.title}</div>
                       <div className="doc-meta">
@@ -580,34 +597,48 @@ export function DocumentsPage() {
                       {(d.versions.find(v => v.isCurrent) ?? d.versions[0]) ? (
                         <>
                           <button
-                            className="icon-btn text-[12px]"
+                            type="button"
+                            className="doc-action-btn is-open"
                             title="Open"
-                            onClick={() =>
+                            onClick={(event) => {
+                              event.stopPropagation();
                               void handleFileAction(
                                 (d.versions.find(v => v.isCurrent) ?? d.versions[0]).versionId,
                                 'open',
-                              )
-                            }
+                              );
+                            }}
                           >
                             {downloadingVersionId === (d.versions.find(v => v.isCurrent) ?? d.versions[0]).versionId ? '…' : 'Open'}
                           </button>
                           <button
-                            className="icon-btn text-[12px]"
+                            type="button"
+                            className="doc-action-btn"
                             title="Download"
-                            onClick={() =>
+                            onClick={(event) => {
+                              event.stopPropagation();
                               void handleFileAction(
                                 (d.versions.find(v => v.isCurrent) ?? d.versions[0]).versionId,
                                 'download',
-                              )
-                            }
+                              );
+                            }}
                           >
-                            ↓
+                            Download
                           </button>
                         </>
                       ) : null}
-                      <button className="icon-btn" title="Edit" onClick={() => openEdit(d)}>✎</button>
+                      <button
+                        type="button"
+                        className="doc-action-btn is-icon"
+                        title="Edit"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEdit(d);
+                        }}
+                      >
+                        ✎
+                      </button>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </section>

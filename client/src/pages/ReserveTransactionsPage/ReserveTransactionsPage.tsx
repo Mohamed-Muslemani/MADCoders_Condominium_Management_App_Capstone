@@ -2,6 +2,10 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import './ReserveTransactionsPage.css';
 import {
+  createExpenseCategory,
+  getExpenseCategories,
+} from '../../api/expenseCategories';
+import {
   getReserveTransactions,
   createReserveTransaction,
   updateReserveTransaction,
@@ -15,6 +19,7 @@ import type {
   CreateReserveTransactionRequest,
   UpdateReserveTransactionRequest,
 } from '../../types/reserve-transaction';
+import type { ExpenseCategory } from '../../types/expense-category';
 
 /* ── Lightbox ── */
 function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
@@ -33,13 +38,14 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
 
 /* ── Expense Drawer ── */
 function ExpenseDrawer({
-  mode, transaction, saving, toast,
-  onClose, onSave, onDelete, onReceiptAction,
+  mode, transaction, saving, toast, categories,
+  onClose, onSave, onDelete, onReceiptAction, onCreateCategory,
 }: {
   mode: 'create' | 'edit';
   transaction: ReserveTransaction | null;
   saving: boolean;
   toast: string;
+  categories: ExpenseCategory[];
   onClose: () => void;
   onSave: (
     p: CreateReserveTransactionRequest | UpdateReserveTransactionRequest,
@@ -47,15 +53,25 @@ function ExpenseDrawer({
   ) => void;
   onDelete: () => void;
   onReceiptAction: (action: 'open' | 'download' | 'remove') => void;
+  onCreateCategory: (payload: {
+    name: string;
+    description?: string;
+  }) => Promise<ExpenseCategory>;
 }) {
   const [title,         setTitle]         = useState('');
   const [description,   setDescription]   = useState('');
+  const [categoryId,    setCategoryId]    = useState('');
   const [amount,        setAmount]        = useState('');
   const [date,          setDate]          = useState('');
   const [errors,        setErrors]        = useState<Record<string, string>>({});
   const [receiptFile,   setReceiptFile]   = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [lightbox,      setLightbox]      = useState(false);
+  const [showCategoryCreate, setShowCategoryCreate] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDescription, setNewCategoryDescription] = useState('');
+  const [categorySaving, setCategorySaving] = useState(false);
+  const [categoryError, setCategoryError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const isEdit = mode === 'edit';
@@ -64,14 +80,19 @@ function ExpenseDrawer({
     if (isEdit && transaction) {
       setTitle(transaction.title);
       setDescription(transaction.description ?? '');
+      setCategoryId(transaction.categoryId ?? '');
       setAmount(String(transaction.amount));
       setDate(transaction.transactionDate?.slice(0, 10) ?? '');
     } else {
-      setTitle(''); setDescription(''); setAmount('');
+      setTitle(''); setDescription(''); setCategoryId(''); setAmount('');
       setDate(new Date().toISOString().slice(0, 10));
     }
     setReceiptFile(null);
     setReceiptPreviewUrl(null);
+    setShowCategoryCreate(false);
+    setNewCategoryName('');
+    setNewCategoryDescription('');
+    setCategoryError('');
     setErrors({});
   }, [mode, transaction?.transactionId]);
 
@@ -114,12 +135,14 @@ function ExpenseDrawer({
     if (!validate()) return;
     const payload = isEdit
       ? {
+          categoryId: categoryId || null,
           title: title.trim(),
           description: description.trim() || undefined,
           amount: Number(amount),
           transactionDate: date,
         } as UpdateReserveTransactionRequest
       : {
+          ...(categoryId ? { categoryId } : {}),
           title: title.trim(),
           description: description.trim() || undefined,
           amount: Number(amount),
@@ -128,6 +151,36 @@ function ExpenseDrawer({
           transactionDate: date,
         } as CreateReserveTransactionRequest;
     onSave(payload, receiptFile);
+  }
+
+  async function handleCreateCategory() {
+    const name = newCategoryName.trim();
+
+    if (!name) {
+      setCategoryError('Category name is required.');
+      return;
+    }
+
+    try {
+      setCategorySaving(true);
+      setCategoryError('');
+      const created = await onCreateCategory({
+        name,
+        description: newCategoryDescription.trim() || undefined,
+      });
+      setCategoryId(created.categoryId);
+      setShowCategoryCreate(false);
+      setNewCategoryName('');
+      setNewCategoryDescription('');
+    } catch (requestError) {
+      setCategoryError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Could not create category.',
+      );
+    } finally {
+      setCategorySaving(false);
+    }
   }
 
   const fmt = (n: string | number) =>
@@ -258,6 +311,61 @@ function ExpenseDrawer({
               </div>
 
               <div className="mt-[10px]">
+                <label className="form-label">Category</label>
+                <div className="exp-category-row">
+                  <select
+                    className="form-input"
+                    value={categoryId}
+                    onChange={e => setCategoryId(e.target.value)}
+                  >
+                    <option value="">Uncategorized</option>
+                    {categories.map((category) => (
+                      <option key={category.categoryId} value={category.categoryId}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => {
+                      setShowCategoryCreate((current) => !current);
+                      setCategoryError('');
+                    }}
+                  >
+                    {showCategoryCreate ? 'Hide' : '+ New'}
+                  </button>
+                </div>
+                {showCategoryCreate ? (
+                  <div className="exp-category-create">
+                    {categoryError ? <div className="field-err">{categoryError}</div> : null}
+                    <input
+                      className="form-input"
+                      value={newCategoryName}
+                      onChange={(event) => setNewCategoryName(event.target.value)}
+                      placeholder="Category name"
+                    />
+                    <input
+                      className="form-input"
+                      value={newCategoryDescription}
+                      onChange={(event) => setNewCategoryDescription(event.target.value)}
+                      placeholder="Optional description"
+                    />
+                    <div className="exp-category-create-actions">
+                      <button
+                        type="button"
+                        className="btn-soft"
+                        onClick={() => void handleCreateCategory()}
+                        disabled={categorySaving}
+                      >
+                        {categorySaving ? 'Creating…' : 'Create Category'}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-[10px]">
                 <label className="form-label">Description</label>
                 <textarea
                   className="form-textarea"
@@ -341,6 +449,7 @@ export function ReserveTransactionsPage() {
   const location = useLocation();
 
   const [transactions, setTransactions] = useState<ReserveTransaction[]>([]);
+  const [categories,   setCategories]   = useState<ExpenseCategory[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState('');
@@ -361,13 +470,29 @@ export function ReserveTransactionsPage() {
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true); setError('');
-      const data = await getReserveTransactions({ type: 'EXPENSE', status: 'POSTED' });
-      setTransactions(data);
+      const [transactionData, categoryData] = await Promise.all([
+        getReserveTransactions({ type: 'EXPENSE', status: 'POSTED' }),
+        getExpenseCategories(),
+      ]);
+      setTransactions(transactionData);
+      setCategories(categoryData);
     } catch { setError('Could not load expenses'); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchAll(); }, [location.key]);
+
+  useEffect(() => {
+    function handleCreateEvent() {
+      openCreate();
+    }
+
+    window.addEventListener('admin-expenses-create', handleCreateEvent);
+
+    return () => {
+      window.removeEventListener('admin-expenses-create', handleCreateEvent);
+    };
+  }, []);
 
   const filtered = transactions.filter(t => {
     const s = search.toLowerCase();
@@ -378,9 +503,20 @@ export function ReserveTransactionsPage() {
   const startIdx   = (page - 1) * pageSize;
   const pageItems  = filtered.slice(startIdx, startIdx + pageSize);
 
-  function openCreate() { setMode('create'); setActive(null); setDrawer(true); }
-  function openEdit(t: ReserveTransaction) { setMode('edit'); setActive(t); setDrawer(true); }
-  function closeDrawer() { setDrawer(false); setActive(null); }
+  function openCreate() {
+    setMode('create');
+    setActive(null);
+    setDrawer(true);
+  }
+  function openEdit(t: ReserveTransaction) {
+    setMode('edit');
+    setActive(t);
+    setDrawer(true);
+  }
+  function closeDrawer() {
+    setDrawer(false);
+    setActive(null);
+  }
 
   async function handleSave(
     payload: CreateReserveTransactionRequest | UpdateReserveTransactionRequest,
@@ -462,6 +598,18 @@ export function ReserveTransactionsPage() {
     }
   }
 
+  async function handleCreateCategory(payload: {
+    name: string;
+    description?: string;
+  }) {
+    const created = await createExpenseCategory(payload);
+    setCategories((current) =>
+      [...current, created].sort((left, right) => left.name.localeCompare(right.name)),
+    );
+    showToast(`Category "${created.name}" created.`);
+    return created;
+  }
+
   function exportCSV() {
     const header = ['transactionId', 'title', 'description', 'amount', 'date', 'receipt'].join(',');
     const rows = filtered.map(t =>
@@ -491,10 +639,10 @@ export function ReserveTransactionsPage() {
     <>
       {/* ── Hero ── */}
       <section
-        className="rounded-[18px] border border-[#e5eaf3] p-4"
+        className="rounded-[18px] border border-[#e5eaf3] p-[14px]"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
       >
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
               Expenses (Receipt Gallery)
@@ -508,6 +656,14 @@ export function ReserveTransactionsPage() {
               <span className="h-2 w-2 rounded-full bg-[#2563eb] shadow-[0_0_0_3px_rgba(37,99,235,0.12)]" />
               {loading ? '—' : `${filtered.length} expenses`}
             </span>
+            <button
+              className="btn-ghost"
+              onClick={() => {
+                openCreate();
+              }}
+            >
+              + Category
+            </button>
             <button className="btn-soft" onClick={exportCSV}>Export CSV</button>
             <button className="btn-solid" onClick={openCreate}>+ Add Expense</button>
           </div>
@@ -625,10 +781,12 @@ export function ReserveTransactionsPage() {
           transaction={active}
           saving={saving}
           toast={toast}
+          categories={categories}
           onClose={closeDrawer}
           onSave={handleSave}
           onDelete={handleDelete}
           onReceiptAction={handleReceiptAction}
+          onCreateCategory={handleCreateCategory}
         />
       )}
     </>

@@ -138,6 +138,11 @@
 }
 .units-table tbody tr { transition: background .12s ease; }
 .units-table tbody tr:hover { background: rgba(238,244,255,0.45); }
+.units-row { cursor: pointer; }
+.units-row:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
 .units-table tbody td:nth-child(5) {
   overflow: visible;
   text-overflow: clip;
@@ -163,9 +168,8 @@
   padding: 0;
   width: 100%;
   text-align: left;
-  cursor: pointer;
 }
-.unit-link:hover .cell-title { text-decoration: underline; }
+.units-row:hover .cell-title { text-decoration: underline; }
 .cell-title {
   font-weight: 900;
   color: #1d4ed8;

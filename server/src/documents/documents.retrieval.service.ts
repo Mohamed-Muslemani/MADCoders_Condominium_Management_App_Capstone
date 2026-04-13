@@ -78,7 +78,12 @@ export class DocumentsRetrievalService {
         WHERE dv."index_status" = 'INDEXED'
         ${
           visibilities?.length
-            ? Prisma.sql`AND d."visibility" IN (${Prisma.join(visibilities)})`
+            ? Prisma.sql`AND d."visibility" IN (${Prisma.join(
+                visibilities.map(
+                  (visibility) =>
+                    Prisma.sql`${visibility}::"DocumentVisibility"`,
+                ),
+              )})`
             : Prisma.empty
         }
         ORDER BY de."embedding" <=> ${vectorLiteral}::vector ASC

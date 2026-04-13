@@ -134,25 +134,42 @@ export function AdminProfilePage() {
   return (
     <section className="admin-profile-page">
       <section className="admin-profile-hero">
-        <div className="admin-profile-hero-copy">
+        <div className="admin-profile-hero-top">
           <div>
-            <h2>My Profile</h2>
-            <p>
+            <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
+              My Profile
+            </h2>
+            <p className="m-0 mt-[6px] text-[13px] leading-[1.35] text-[#64748b]">
               Keep your admin account details current for everyday operations.
             </p>
           </div>
-
-          <div className="admin-profile-hero-note">
-            Your credentials and contact details live here, while user management
-            for all accounts stays under the main Users section.
-          </div>
-        </div>
-
-        <div className="admin-profile-hero-status">
           <span className="admin-profile-status-pill">
             <span className={`admin-profile-status-dot ${user?.active ? 'is-active' : 'is-inactive'}`} />
             {user?.active ? 'Account active' : 'Account inactive'}
           </span>
+        </div>
+
+        <div className="admin-profile-stats">
+          <div className="admin-profile-stat-card admin-profile-stat-card-wide">
+            <p>Email</p>
+            <strong>{user?.email ?? 'Unavailable'}</strong>
+          </div>
+          <div className="admin-profile-stat-card">
+            <p>Member Since</p>
+            <strong>{formatDate(user?.createdAt)}</strong>
+          </div>
+          <div className="admin-profile-stat-card">
+            <p>Status</p>
+            <strong>{user?.active ? 'Active' : 'Inactive'}</strong>
+          </div>
+          <div className="admin-profile-stat-card">
+            <p>Role</p>
+            <strong>{user?.role ?? 'ADMIN'}</strong>
+          </div>
+          <div className="admin-profile-stat-card">
+            <p>Workspace</p>
+            <strong>Admin Portal</strong>
+          </div>
         </div>
       </section>
 
@@ -165,44 +182,14 @@ export function AdminProfilePage() {
           {error}
         </div>
       ) : (
-        <div className="admin-profile-grid">
-          <section className="admin-profile-card">
-            <div className="admin-profile-card-head">
-              <div>
-                <h3>Account Summary</h3>
-                <p>Quick visibility into your workspace identity and account state.</p>
-              </div>
-              <span className="admin-profile-chip">
-                {user?.role ?? 'ADMIN'}
-              </span>
+        <section className="admin-profile-card">
+          <div className="admin-profile-card-head">
+            <div>
+              <h3>Account Details</h3>
+              <p>Update contact information and rotate your login credentials here.</p>
             </div>
-
-            <div className="admin-profile-summary-grid">
-              <div className="admin-profile-summary-card admin-profile-summary-card-wide">
-                <small>Email</small>
-                <strong>{user?.email ?? 'Unavailable'}</strong>
-              </div>
-              <div className="admin-profile-summary-card">
-                <small>Member Since</small>
-                <strong>{formatDate(user?.createdAt)}</strong>
-              </div>
-              <div className="admin-profile-summary-card">
-                <small>Status</small>
-                <strong>{user?.active ? 'Active' : 'Inactive'}</strong>
-              </div>
-              <div className="admin-profile-summary-card">
-                <small>Workspace</small>
-                <strong>Admin Portal</strong>
-              </div>
-            </div>
-          </section>
-
-          <section className="admin-profile-card">
-            <div className="admin-profile-card-head">
-              <div>
-                <h3>Account Details</h3>
-                <p>Update contact information and rotate your login credentials here.</p>
-              </div>
+            <div className="admin-profile-card-actions">
+              <span className="admin-profile-chip">Users stay managed on the Users page</span>
               <button
                 type="button"
                 className="admin-profile-save"
@@ -212,44 +199,46 @@ export function AdminProfilePage() {
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+          </div>
 
-            <div className="admin-profile-form">
-              {error ? (
-                <div className="admin-profile-message is-error">
-                  {error}
-                </div>
-              ) : null}
-
-              {success ? (
-                <div className="admin-profile-message is-success">
-                  {success}
-                </div>
-              ) : null}
-
-              <div className="admin-profile-field-grid">
-                <label className="admin-profile-field">
-                  <span>First Name</span>
-                  <input
-                    className="admin-profile-input"
-                    value={form.firstName}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, firstName: event.target.value }))
-                    }
-                  />
-                </label>
-
-                <label className="admin-profile-field">
-                  <span>Last Name</span>
-                  <input
-                    className="admin-profile-input"
-                    value={form.lastName}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, lastName: event.target.value }))
-                    }
-                  />
-                </label>
+          <div className="admin-profile-form">
+            {error ? (
+              <div className="admin-profile-message is-error">
+                {error}
               </div>
+            ) : null}
 
+            {success ? (
+              <div className="admin-profile-message is-success">
+                {success}
+              </div>
+            ) : null}
+
+            <div className="admin-profile-field-grid">
+              <label className="admin-profile-field">
+                <span>First Name</span>
+                <input
+                  className="admin-profile-input"
+                  value={form.firstName}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, firstName: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="admin-profile-field">
+                <span>Last Name</span>
+                <input
+                  className="admin-profile-input"
+                  value={form.lastName}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, lastName: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="admin-profile-field-grid">
               <label className="admin-profile-field">
                 <span>Email</span>
                 <input
@@ -273,41 +262,41 @@ export function AdminProfilePage() {
                   placeholder="Add a phone number"
                 />
               </label>
-
-              <div className="admin-profile-field-grid">
-                <label className="admin-profile-field">
-                  <span>New Password</span>
-                  <input
-                    type="password"
-                    className="admin-profile-input"
-                    value={form.password}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, password: event.target.value }))
-                    }
-                    placeholder="Leave blank to keep current password"
-                  />
-                </label>
-
-                <label className="admin-profile-field">
-                  <span>Confirm New Password</span>
-                  <input
-                    type="password"
-                    className="admin-profile-input"
-                    value={form.confirmPassword}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, confirmPassword: event.target.value }))
-                    }
-                    placeholder="Repeat new password"
-                  />
-                </label>
-              </div>
-
-              <div className="admin-profile-help">
-                Leave the password fields blank to keep your current password.
-              </div>
             </div>
-          </section>
-        </div>
+
+            <div className="admin-profile-field-grid">
+              <label className="admin-profile-field">
+                <span>New Password</span>
+                <input
+                  type="password"
+                  className="admin-profile-input"
+                  value={form.password}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, password: event.target.value }))
+                  }
+                  placeholder="Leave blank to keep current password"
+                />
+              </label>
+
+              <label className="admin-profile-field">
+                <span>Confirm New Password</span>
+                <input
+                  type="password"
+                  className="admin-profile-input"
+                  value={form.confirmPassword}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, confirmPassword: event.target.value }))
+                  }
+                  placeholder="Repeat new password"
+                />
+              </label>
+            </div>
+
+            <div className="admin-profile-help">
+              Leave the password fields blank to keep your current password.
+            </div>
+          </div>
+        </section>
       )}
     </section>
   );

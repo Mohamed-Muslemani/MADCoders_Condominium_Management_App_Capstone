@@ -289,6 +289,18 @@ export function UnitsPage() {
 
   useEffect(() => { fetchAll(); }, [location.key]);
 
+  useEffect(() => {
+    function handleCreateEvent() {
+      openCreate();
+    }
+
+    window.addEventListener('admin-units-create', handleCreateEvent);
+
+    return () => {
+      window.removeEventListener('admin-units-create', handleCreateEvent);
+    };
+  }, []);
+
   function getOwnerName(unitId: string): string {
     const record = unitOwners.find(o => o.unitId === unitId && !o.endDate);
     return record ? `${record.user.firstName} ${record.user.lastName}` : 'No Owner';
@@ -389,10 +401,10 @@ export function UnitsPage() {
     <>
       {/* ── Hero ── */}
       <section
-        className="rounded-[18px] border border-[#e5eaf3] p-4"
+        className="rounded-[18px] border border-[#e5eaf3] p-[14px]"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
       >
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
               Units Management
@@ -485,12 +497,24 @@ export function UnitsPage() {
                     </td>
                   </tr>
                 ) : pageItems.map(u => (
-                  <tr key={u.unitId}>
+                  <tr
+                    key={u.unitId}
+                    className="units-row"
+                    onClick={() => openEdit(u)}
+                    tabIndex={0}
+                    role="button"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openEdit(u);
+                      }
+                    }}
+                  >
                     <td>
-                      <button className="unit-link" onClick={() => openEdit(u)}>
+                      <div className="unit-link">
                         <div className="cell-title">{u.unitNumber}</div>
                         <div className="cell-sub">{getOwnerName(u.unitId)}</div>
-                      </button>
+                      </div>
                     </td>
                     <td>
                       {u.floor != null ? (

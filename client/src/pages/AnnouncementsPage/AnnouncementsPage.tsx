@@ -257,6 +257,18 @@ export function AnnouncementsPage() {
 
   useEffect(() => { fetchAll(); }, [location.key]);
 
+  useEffect(() => {
+    function handleCreateEvent() {
+      openCreate();
+    }
+
+    window.addEventListener('admin-announcements-create', handleCreateEvent);
+
+    return () => {
+      window.removeEventListener('admin-announcements-create', handleCreateEvent);
+    };
+  }, []);
+
   const filtered = announcements
     .filter(a => {
       const s = search.toLowerCase();
@@ -315,10 +327,10 @@ export function AnnouncementsPage() {
     <>
       {/* ── Hero ── */}
       <section
-        className="rounded-[18px] border border-[#e5eaf3] p-4"
+        className="rounded-[18px] border border-[#e5eaf3] p-[14px]"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
       >
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
               Announcements
