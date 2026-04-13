@@ -1,10 +1,11 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { createHash, randomUUID } from 'crypto';
-import { promises as fs } from 'fs';
+import { createReadStream, promises as fs } from 'fs';
 import { extname, join } from 'path';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
@@ -24,9 +25,7 @@ type UploadedDocumentFile = {
 function serializeBigInt<T>(value: T): T {
   return JSON.parse(
     JSON.stringify(value, (_, currentValue: unknown) =>
-      typeof currentValue === 'bigint'
-        ? Number(currentValue)
-        : currentValue,
+      typeof currentValue === 'bigint' ? Number(currentValue) : currentValue,
     ),
   ) as T;
 }
@@ -305,6 +304,49 @@ export class DocumentsService {
     await this.findVersion(versionId);
     await this.embeddingsService.generateForVersion(versionId);
     return this.findVersion(versionId);
+  }
+
+  async getVersionDownload(
+    versionId: string,
+    user: { userId: string; role: 'ADMIN' | 'OWNER' },
+  ) {
+    const version = await this.prisma.documentVersion.findUnique({
+      where: { versionId },
+      select: {
+        versionId: true,
+        file: {
+          select: {
+            originalName: true,
+            mimeType: true,
+            sizeBytes: true,
+            storagePath: true,
+          },
+        },
+        document: {
+          select: {
+            visibility: true,
+          },
+        },
+      },
+    });
+
+    if (!version) {
+      throw new NotFoundException('Document version not found');
+    }
+
+    if (
+      user.role === 'OWNER' &&
+      version.document.visibility === 'BOARD_ONLY'
+    ) {
+      throw new ForbiddenException('Forbidden resource');
+    }
+
+    return {
+      originalName: version.file.originalName,
+      mimeType: version.file.mimeType,
+      sizeBytes: Number(version.file.sizeBytes),
+      stream: createReadStream(version.file.storagePath),
+    };
   }
 
   async search(query: string) {

@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import type { DocumentVisibility } from '@prisma/client';
 import OpenAI from 'openai';
 import { DocumentsRetrievalService } from './documents.retrieval.service';
 
@@ -40,6 +41,17 @@ export class DocumentsQaService {
   }
 
   async ask(query: string) {
+    return this.askAccessible(query);
+  }
+
+  async askOwnerAccessible(query: string) {
+    return this.askAccessible(query, ['PUBLIC', 'OWNERS_ONLY']);
+  }
+
+  private async askAccessible(
+    query: string,
+    visibilities?: DocumentVisibility[],
+  ) {
     if (!query.trim()) {
       throw new BadRequestException('query must not be empty');
     }
@@ -49,10 +61,12 @@ export class DocumentsQaService {
       throw new ServiceUnavailableException('OPENAI_API_KEY is not configured');
     }
 
-    const retrievalResults = await this.retrievalService.search(
-      query.trim(),
-      MAX_CONTEXT_RESULTS,
-    );
+    const retrievalResults = visibilities?.length
+      ? await this.retrievalService.searchOwnerAccessible(
+          query.trim(),
+          MAX_CONTEXT_RESULTS,
+        )
+      : await this.retrievalService.search(query.trim(), MAX_CONTEXT_RESULTS);
 
     const relevantChunks = retrievalResults.filter(
       (result) => result.similarityScore >= MIN_SIMILARITY_SCORE,
@@ -70,11 +84,15 @@ export class DocumentsQaService {
       relevantChunks,
     );
 
-    const citations = this.mapCitations(modelResponse.citations, relevantChunks);
+    const citations = this.mapCitations(
+      modelResponse.citations,
+      relevantChunks,
+    );
 
     return {
       answer:
-        modelResponse.answer.trim() || 'No relevant information found in documents',
+        modelResponse.answer.trim() ||
+        'No relevant information found in documents',
       citations,
     };
   }
@@ -117,7 +135,9 @@ export class DocumentsQaService {
       return JSON.parse(response.output_text) as QaModelResponse;
     } catch (error) {
       console.error('DOCUMENT QA ERROR:', error);
-      throw new InternalServerErrorException('Failed to generate document answer');
+      throw new InternalServerErrorException(
+        'Failed to generate document answer',
+      );
     }
   }
 

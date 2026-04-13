@@ -14,7 +14,7 @@ import { MeetingsModule } from './meetings/meetings.module';
 import { DocumentsModule } from './documents/documents.module';
 import { DuesImportsModule } from './dues-imports/dues-imports.module';
 import { ExpenseCategoriesModule } from './expense-categories/expense-categories.module';
-
+import { OwnerModule } from './owner/owner.module';
 
 @Module({
   imports: [
@@ -27,6 +27,7 @@ import { ExpenseCategoriesModule } from './expense-categories/expense-categories
     UnitDuesModule,
     ReserveTransactionsModule,
     ExpenseCategoriesModule,
+    OwnerModule,
     DuesImportsModule,
     EmailModule,
     MeetingsModule,

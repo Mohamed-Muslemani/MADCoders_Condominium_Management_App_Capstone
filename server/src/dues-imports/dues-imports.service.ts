@@ -176,7 +176,9 @@ export class DuesImportsService {
     const csvRows = this.parseCsv(file.buffer.toString('utf-8'));
 
     if (csvRows.length === 0) {
-      throw new BadRequestException('CSV file must contain at least one data row');
+      throw new BadRequestException(
+        'CSV file must contain at least one data row',
+      );
     }
 
     const batchPeriodMonth = this.resolveBatchPeriodMonth(csvRows);
@@ -288,17 +290,17 @@ export class DuesImportsService {
       await tx.unitDue.upsert({
         where: {
           unitId_periodMonth: {
-            unitId: normalized.unitId!,
-            periodMonth: normalized.periodMonth!,
+            unitId: normalized.unitId,
+            periodMonth: normalized.periodMonth,
           },
         },
         create: {
-          unitId: normalized.unitId!,
-          periodMonth: normalized.periodMonth!,
-          dueDate: normalized.dueDate!,
+          unitId: normalized.unitId,
+          periodMonth: normalized.periodMonth,
+          dueDate: normalized.dueDate,
           paidDate: normalized.paidDate,
-          amount: normalized.amount!,
-          status: normalized.status!,
+          amount: normalized.amount,
+          status: normalized.status,
           note: normalized.note,
           importBatchId,
           importLineId: line.importLineId,
@@ -306,10 +308,10 @@ export class DuesImportsService {
           updatedAt: new Date(),
         },
         update: {
-          dueDate: normalized.dueDate!,
+          dueDate: normalized.dueDate,
           paidDate: normalized.paidDate,
-          amount: normalized.amount!,
-          status: normalized.status!,
+          amount: normalized.amount,
+          status: normalized.status,
           note: normalized.note,
           importBatchId,
           importLineId: line.importLineId,
@@ -325,6 +327,7 @@ export class DuesImportsService {
     batchPeriodMonth: Date,
   ): Promise<NormalizedRow> {
     const sourceUnitId = this.readValue(row.values, 'unit_id');
+    const sourceUnitNumber = this.readValue(row.values, 'unit_number');
     const rawPeriodMonth = this.readValue(row.values, 'period_month');
     const rawDueDate = this.readValue(row.values, 'due_date');
     const rawPaidDate = this.readValue(row.values, 'paid_date');
@@ -335,11 +338,11 @@ export class DuesImportsService {
     const note = rawNote || null;
     const errors: string[] = [];
 
-    const periodMonth = rawPeriodMonth
-      ? this.parseMonth(rawPeriodMonth)
-      : null;
+    const periodMonth = rawPeriodMonth ? this.parseMonth(rawPeriodMonth) : null;
     if (!periodMonth) {
-      errors.push('period_month is required and must be in YYYY-MM or YYYY-MM-DD format');
+      errors.push(
+        'period_month is required and must be in YYYY-MM or YYYY-MM-DD format',
+      );
     } else if (periodMonth.getTime() !== batchPeriodMonth.getTime()) {
       errors.push('period_month must match the batch period');
     }
@@ -368,16 +371,27 @@ export class DuesImportsService {
     }
 
     let unitId: string | null = null;
-    if (!sourceUnitId) {
-      errors.push('unit_id is required');
+    const sourceUnitIdentifier = sourceUnitId || sourceUnitNumber;
+
+    if (!sourceUnitIdentifier) {
+      errors.push('unit_id or unit_number is required');
     } else {
-      const unit = await this.prisma.unit.findUnique({
-        where: { unitId: sourceUnitId },
-        select: { unitId: true },
-      });
+      const unit = sourceUnitId
+        ? await this.prisma.unit.findUnique({
+            where: { unitId: sourceUnitId },
+            select: { unitId: true },
+          })
+        : await this.prisma.unit.findFirst({
+            where: { unitNumber: sourceUnitNumber },
+            select: { unitId: true },
+          });
 
       if (!unit) {
-        errors.push('unit_id does not match an existing unit');
+        errors.push(
+          sourceUnitId
+            ? 'unit_id does not match an existing unit'
+            : 'unit_number does not match an existing unit',
+        );
       } else {
         unitId = unit.unitId;
       }
@@ -386,7 +400,7 @@ export class DuesImportsService {
     if (errors.length > 0) {
       return {
         rowNumber: row.rowNumber,
-        sourceUnitId: sourceUnitId || null,
+        sourceUnitId: sourceUnitIdentifier || null,
         unitId,
         periodMonth,
         dueDate,
@@ -401,7 +415,7 @@ export class DuesImportsService {
 
     return {
       rowNumber: row.rowNumber,
-      sourceUnitId,
+      sourceUnitId: sourceUnitIdentifier,
       unitId,
       periodMonth,
       dueDate,
@@ -445,15 +459,15 @@ export class DuesImportsService {
       lines: Array<{ rowStatus: 'APPLIED' | 'FAILED' | 'PENDING' }>;
     },
   >(batch: T) {
-    const successCount = batch.lines.filter((line) => line.rowStatus === 'APPLIED').length;
-    const failedCount = batch.lines.filter((line) => line.rowStatus === 'FAILED').length;
+    const successCount = batch.lines.filter(
+      (line) => line.rowStatus === 'APPLIED',
+    ).length;
+    const failedCount = batch.lines.filter(
+      (line) => line.rowStatus === 'FAILED',
+    ).length;
 
     const batchStatus =
-      failedCount === 0
-        ? 'APPLIED'
-        : successCount === 0
-          ? 'FAILED'
-          : 'PARTIAL';
+      failedCount === 0 ? 'APPLIED' : successCount === 0 ? 'FAILED' : 'PARTIAL';
 
     const serialized = JSON.parse(
       JSON.stringify(batch, (_, value: unknown) =>
@@ -487,11 +501,19 @@ export class DuesImportsService {
     }
 
     const headers = rows[0].map((value) => this.normalizeHeader(value));
-    const requiredHeaders = ['unit_id', 'period_month', 'amount', 'due_date'];
+    const requiredHeaders = ['period_month', 'amount', 'due_date'];
+
+    if (!headers.includes('unit_id') && !headers.includes('unit_number')) {
+      throw new BadRequestException(
+        'CSV is missing required column: unit_id or unit_number',
+      );
+    }
 
     for (const header of requiredHeaders) {
       if (!headers.includes(header)) {
-        throw new BadRequestException(`CSV is missing required column: ${header}`);
+        throw new BadRequestException(
+          `CSV is missing required column: ${header}`,
+        );
       }
     }
 
@@ -499,10 +521,13 @@ export class DuesImportsService {
       .slice(1)
       .map((values, index) => ({
         rowNumber: index + 2,
-        values: headers.reduce<Record<string, string>>((acc, header, headerIndex) => {
-          acc[header] = (values[headerIndex] ?? '').trim();
-          return acc;
-        }, {}),
+        values: headers.reduce<Record<string, string>>(
+          (acc, header, headerIndex) => {
+            acc[header] = (values[headerIndex] ?? '').trim();
+            return acc;
+          },
+          {},
+        ),
       }))
       .filter((row) =>
         Object.values(row.values).some((value) => value.trim().length > 0),

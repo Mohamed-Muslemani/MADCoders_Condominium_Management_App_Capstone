@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -21,7 +22,10 @@ const safeUserSelect = {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async findAll() {
     return this.prisma.user.findMany({
@@ -47,7 +51,7 @@ export class UsersService {
     try {
       const hash = await bcrypt.hash(dto.password, 10);
 
-      return await this.prisma.user.create({
+      const user = await this.prisma.user.create({
         data: {
           email: dto.email,
           passwordHash: hash,
@@ -59,6 +63,10 @@ export class UsersService {
         },
         select: safeUserSelect,
       });
+
+      await this.emailService.sendWelcomeEmail(user.email, user.firstName);
+
+      return user;
     } catch (error: any) {
       this.handlePrismaError(error);
     }

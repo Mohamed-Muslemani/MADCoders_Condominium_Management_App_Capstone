@@ -1,6 +1,7 @@
 
 import type { UnitSummary } from './unit';
 import type { User } from './user';
+import type { StoredFileSummary } from './document';
 
 export type MaintenanceScope = 'UNIT' | 'BUILDING';
 export type MaintenanceStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED';
@@ -20,6 +21,7 @@ export interface MaintenanceRequest {
   closedAt?: string | null;
   submittedBy: Omit<User, 'phone' | 'createdAt'>;
   unit?: UnitSummary | null;
+  attachments?: StoredFileSummary[];
 }
 
 export interface MaintenanceRequestListParams {

@@ -22,7 +22,13 @@ Example `.env`:
 DATABASE_URL="postgresql://postgres:postgres@db:5432/condo_db?schema=public"
 JWT_SECRET="password"
 JWT_EXPIRES_IN="7d"
+VITE_API_URL="http://localhost:3000"
+VITE_CONTACT_ADMIN_URL="mailto:support@example.com"
 ```
+
+`VITE_CONTACT_ADMIN_URL` controls the login page "Contact administrator"
+link. You can use a `mailto:` link, a support URL, or leave it blank to hide
+the link.
 
 ------------------------------------------------------------------------
 
@@ -58,4 +64,3 @@ Stop containers:
 ``` bash
 docker compose down
 ```
-

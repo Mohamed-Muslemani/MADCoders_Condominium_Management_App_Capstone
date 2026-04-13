@@ -288,7 +288,9 @@ export class UnitDuesService {
     paidDate?: string | null,
   ) {
     if (status !== 'PAID' && paidDate) {
-      throw new BadRequestException('paidDate is only allowed when status is PAID');
+      throw new BadRequestException(
+        'paidDate is only allowed when status is PAID',
+      );
     }
   }
 

@@ -4,6 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { createHash, randomUUID } from 'crypto';
+import { createReadStream, promises as fs } from 'fs';
+import { extname, join } from 'path';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMaintenanceRequestDto } from './dto/create-maintenance-request.dto';
@@ -13,6 +16,31 @@ import { UpdateMaintenanceRequestDto } from './dto/update-maintenance-request.dt
 type AuthUser = {
   userId: string;
   role: 'ADMIN' | 'OWNER';
+};
+
+type UploadedMaintenanceFile = {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+};
+
+const maintenanceAttachmentSelect = {
+  fileId: true,
+  originalName: true,
+  mimeType: true,
+  sizeBytes: true,
+  uploadedAt: true,
+  links: {
+    where: { relatedType: 'MAINTENANCE_REQUEST' as const },
+    select: {
+      fileLinkId: true,
+      relatedType: true,
+      relatedId: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
 };
 
 const safeMaintenanceRequestSelect = {
@@ -82,39 +110,21 @@ export class MaintenanceRequestsService {
       };
     }
 
-    return this.prisma.maintenanceRequest.findMany({
+    const requests = await this.prisma.maintenanceRequest.findMany({
       where,
       select: safeMaintenanceRequestSelect,
       orderBy: [{ createdAt: 'desc' }, { requestId: 'desc' }],
       skip: query.skip,
       take: query.take,
     });
+
+    return this.attachFiles(requests);
   }
 
   async findOne(authUser: AuthUser, requestId: string) {
-    const request = await this.prisma.maintenanceRequest.findUnique({
-      where: { requestId },
-      select: safeMaintenanceRequestSelect,
-    });
-
-    if (!request) {
-      throw new NotFoundException('Maintenance request not found');
-    }
-
-    if (authUser.role !== 'ADMIN') {
-      const canAccessBuilding = request.scope === 'BUILDING';
-      const isOwnerRequest = request.submittedByUserId === authUser.userId;
-      const ownsUnit =
-        request.unitId !== null
-          ? await this.hasActiveOwnership(authUser.userId, request.unitId)
-          : false;
-
-      if (!canAccessBuilding && !isOwnerRequest && !ownsUnit) {
-        throw new ForbiddenException('You do not have access to this request');
-      }
-    }
-
-    return request;
+    const request = await this.findAccessibleRequest(authUser, requestId);
+    const [hydrated] = await this.attachFiles([request]);
+    return hydrated;
   }
 
   async findMy(authUser: AuthUser, query: QueryMaintenanceRequestDto) {
@@ -127,13 +137,15 @@ export class MaintenanceRequestsService {
     if (query.priority) where.priority = query.priority;
     if (query.unitId) where.unitId = query.unitId;
 
-    return this.prisma.maintenanceRequest.findMany({
+    const requests = await this.prisma.maintenanceRequest.findMany({
       where,
       select: safeMaintenanceRequestSelect,
       orderBy: [{ createdAt: 'desc' }, { requestId: 'desc' }],
       skip: query.skip,
       take: query.take,
     });
+
+    return this.attachFiles(requests);
   }
 
   async findByUnit(authUser: AuthUser, unitId: string) {
@@ -141,11 +153,13 @@ export class MaintenanceRequestsService {
       await this.ensureOwnerHasActiveOwnership(authUser.userId, unitId);
     }
 
-    return this.prisma.maintenanceRequest.findMany({
+    const requests = await this.prisma.maintenanceRequest.findMany({
       where: { unitId },
       select: safeMaintenanceRequestSelect,
       orderBy: [{ createdAt: 'desc' }, { requestId: 'desc' }],
     });
+
+    return this.attachFiles(requests);
   }
 
   async create(authUser: AuthUser, dto: CreateMaintenanceRequestDto) {
@@ -164,14 +178,16 @@ export class MaintenanceRequestsService {
     }
 
     if (scope === 'BUILDING' && dto.unitId) {
-      throw new BadRequestException('unitId must be omitted for BUILDING scope');
+      throw new BadRequestException(
+        'unitId must be omitted for BUILDING scope',
+      );
     }
 
     try {
       const status = dto.status ?? 'OPEN';
       const closedAt = this.shouldClose(status) ? new Date() : null;
 
-      return await this.prisma.maintenanceRequest.create({
+      const created = await this.prisma.maintenanceRequest.create({
         data: {
           scope,
           unitId: scope === 'UNIT' ? dto.unitId : null,
@@ -185,12 +201,115 @@ export class MaintenanceRequestsService {
         },
         select: safeMaintenanceRequestSelect,
       });
+
+      const [hydrated] = await this.attachFiles([created]);
+      return hydrated;
     } catch (error) {
       this.handlePrismaError(error);
     }
   }
 
-  async update(authUser: AuthUser, requestId: string, dto: UpdateMaintenanceRequestDto) {
+  async uploadAttachment(
+    authUser: AuthUser,
+    requestId: string,
+    file: UploadedMaintenanceFile | undefined,
+  ) {
+    if (!file) {
+      throw new BadRequestException('A file is required');
+    }
+
+    if (file.size === 0) {
+      throw new BadRequestException('Uploaded file is empty');
+    }
+
+    await this.findRequestEditableByUser(authUser, requestId);
+    const storedFile = await this.persistAttachment(file);
+
+    try {
+      const created = await this.prisma.$transaction(async (tx) => {
+        const createdFile = await tx.file.create({
+          data: {
+            originalName: file.originalname,
+            storagePath: storedFile.storagePath,
+            mimeType: file.mimetype,
+            sizeBytes: BigInt(file.size),
+            sha256Hash: storedFile.sha256Hash,
+            uploadedByUserId: authUser.userId,
+          },
+          select: { fileId: true },
+        });
+
+        await tx.fileLink.create({
+          data: {
+            fileId: createdFile.fileId,
+            relatedType: 'MAINTENANCE_REQUEST',
+            relatedId: requestId,
+            linkedByUserId: authUser.userId,
+          },
+        });
+
+        return tx.file.findUnique({
+          where: { fileId: createdFile.fileId },
+          select: maintenanceAttachmentSelect,
+        });
+      });
+
+      return this.serializeBigInt(created);
+    } catch (error) {
+      await this.deleteStoredFile(storedFile.storagePath);
+      throw error;
+    }
+  }
+
+  async getAttachmentDownload(authUser: AuthUser, fileId: string) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        fileId,
+        links: {
+          some: {
+            relatedType: 'MAINTENANCE_REQUEST',
+          },
+        },
+      },
+      select: {
+        originalName: true,
+        mimeType: true,
+        sizeBytes: true,
+        storagePath: true,
+        links: {
+          where: {
+            relatedType: 'MAINTENANCE_REQUEST',
+          },
+          select: {
+            relatedId: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          take: 1,
+        },
+      },
+    });
+
+    if (!file || file.links.length === 0) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    await this.findAccessibleRequest(authUser, file.links[0].relatedId);
+
+    return {
+      originalName: file.originalName,
+      mimeType: file.mimeType,
+      sizeBytes: Number(file.sizeBytes),
+      stream: createReadStream(file.storagePath),
+    };
+  }
+
+  async update(
+    authUser: AuthUser,
+    requestId: string,
+    dto: UpdateMaintenanceRequestDto,
+  ) {
     const existing = await this.prisma.maintenanceRequest.findUnique({
       where: { requestId },
       select: {
@@ -214,8 +333,14 @@ export class MaintenanceRequestsService {
       throw new ForbiddenException('You can only update your own requests');
     }
 
+    if (!isAdmin && existing.status !== 'OPEN') {
+      throw new ForbiddenException('Owners can only edit OPEN requests');
+    }
+
     if (!isAdmin && (dto.scope !== undefined || dto.unitId !== undefined)) {
-      throw new ForbiddenException('Owners cannot change request scope or unit');
+      throw new ForbiddenException(
+        'Owners cannot change request scope or unit',
+      );
     }
 
     if (isAdmin) {
@@ -268,11 +393,14 @@ export class MaintenanceRequestsService {
             : { connect: { unitId: dto.unitId } };
       }
 
-      return await this.prisma.maintenanceRequest.update({
+      const updated = await this.prisma.maintenanceRequest.update({
         where: { requestId },
         data,
         select: safeMaintenanceRequestSelect,
       });
+
+      const [hydrated] = await this.attachFiles([updated]);
+      return hydrated;
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -291,11 +419,19 @@ export class MaintenanceRequestsService {
       throw new NotFoundException('Maintenance request not found');
     }
 
-    if (
-      authUser.role !== 'ADMIN' &&
-      existing.submittedByUserId !== authUser.userId
-    ) {
-      throw new ForbiddenException('You can only delete your own requests');
+    if (authUser.role !== 'ADMIN') {
+      if (existing.submittedByUserId !== authUser.userId) {
+        throw new ForbiddenException('You can only delete your own requests');
+      }
+
+      const ownerRequest = await this.prisma.maintenanceRequest.findUnique({
+        where: { requestId },
+        select: { status: true },
+      });
+
+      if (ownerRequest?.status !== 'OPEN') {
+        throw new ForbiddenException('Owners can only delete OPEN requests');
+      }
     }
 
     try {
@@ -321,7 +457,9 @@ export class MaintenanceRequestsService {
     });
 
     if (!ownership) {
-      throw new ForbiddenException('You do not have active ownership for this unit');
+      throw new ForbiddenException(
+        'You do not have active ownership for this unit',
+      );
     }
   }
 
@@ -373,6 +511,111 @@ export class MaintenanceRequestsService {
     return status === 'COMPLETED' || status === 'CLOSED';
   }
 
+  private async findAccessibleRequest(authUser: AuthUser, requestId: string) {
+    const request = await this.prisma.maintenanceRequest.findUnique({
+      where: { requestId },
+      select: safeMaintenanceRequestSelect,
+    });
+
+    if (!request) {
+      throw new NotFoundException('Maintenance request not found');
+    }
+
+    if (authUser.role !== 'ADMIN') {
+      const canAccessBuilding = request.scope === 'BUILDING';
+      const isOwnerRequest = request.submittedByUserId === authUser.userId;
+      const ownsUnit =
+        request.unitId !== null
+          ? await this.hasActiveOwnership(authUser.userId, request.unitId)
+          : false;
+
+      if (!canAccessBuilding && !isOwnerRequest && !ownsUnit) {
+        throw new ForbiddenException('You do not have access to this request');
+      }
+    }
+
+    return request;
+  }
+
+  private async findRequestEditableByUser(
+    authUser: AuthUser,
+    requestId: string,
+  ) {
+    const existing = await this.prisma.maintenanceRequest.findUnique({
+      where: { requestId },
+      select: {
+        requestId: true,
+        submittedByUserId: true,
+        status: true,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Maintenance request not found');
+    }
+
+    if (
+      authUser.role !== 'ADMIN' &&
+      existing.submittedByUserId !== authUser.userId
+    ) {
+      throw new ForbiddenException(
+        'You can only upload files to your own requests',
+      );
+    }
+
+    if (authUser.role !== 'ADMIN' && existing.status !== 'OPEN') {
+      throw new ForbiddenException('Owners can only change OPEN requests');
+    }
+
+    return existing;
+  }
+
+  private async attachFiles<T extends { requestId: string }>(requests: T[]) {
+    if (requests.length === 0) {
+      return requests.map((request) =>
+        this.serializeBigInt({
+          ...request,
+          attachments: [],
+        }),
+      );
+    }
+
+    const requestIds = requests.map((request) => request.requestId);
+    const files = await this.prisma.file.findMany({
+      where: {
+        links: {
+          some: {
+            relatedType: 'MAINTENANCE_REQUEST',
+            relatedId: { in: requestIds },
+          },
+        },
+      },
+      select: maintenanceAttachmentSelect,
+      orderBy: { uploadedAt: 'desc' },
+    });
+
+    const filesByRequestId = new Map<string, Array<(typeof files)[number]>>();
+
+    for (const file of files) {
+      for (const link of file.links) {
+        if (!requestIds.includes(link.relatedId)) {
+          continue;
+        }
+
+        const bucket = filesByRequestId.get(link.relatedId) ?? [];
+        bucket.push(file);
+        filesByRequestId.set(link.relatedId, bucket);
+      }
+    }
+
+    return requests.map((request) =>
+      this.serializeBigInt({
+        ...request,
+        attachments: filesByRequestId.get(request.requestId) ?? [],
+      }),
+    );
+  }
+
   private resolveClosedAt(
     previousStatus: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED',
     nextStatus: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED',
@@ -412,5 +655,46 @@ export class MaintenanceRequestsService {
     }
 
     throw error;
+  }
+
+  private async persistAttachment(file: UploadedMaintenanceFile) {
+    const uploadDir = join(process.cwd(), 'storage', 'maintenance-attachments');
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    const extension =
+      extname(file.originalname) || this.fallbackExtension(file.mimetype);
+    const filename = `${Date.now()}-${randomUUID()}${extension}`;
+    const storagePath = join(uploadDir, filename);
+    const sha256Hash = createHash('sha256').update(file.buffer).digest('hex');
+
+    await fs.writeFile(storagePath, file.buffer);
+
+    return {
+      storagePath,
+      sha256Hash,
+    };
+  }
+
+  private fallbackExtension(mimeType: string) {
+    if (mimeType === 'application/pdf') return '.pdf';
+    if (mimeType === 'image/png') return '.png';
+    if (mimeType === 'image/webp') return '.webp';
+    return '.jpg';
+  }
+
+  private async deleteStoredFile(storagePath: string) {
+    try {
+      await fs.unlink(storagePath);
+    } catch {
+      // Ignore
+    }
+  }
+
+  private serializeBigInt<T>(value: T): T {
+    return JSON.parse(
+      JSON.stringify(value, (_, currentValue: unknown) =>
+        typeof currentValue === 'bigint' ? Number(currentValue) : currentValue,
+      ),
+    ) as T;
   }
 }
