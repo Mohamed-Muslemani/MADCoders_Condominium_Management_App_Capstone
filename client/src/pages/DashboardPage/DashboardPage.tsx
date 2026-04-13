@@ -233,7 +233,7 @@ export function DashboardPage() {
   return (
     <>
       {/* ── Hero ── */}
-      <section className="hero-section hero-bg flex items-end justify-between gap-3 rounded-[18px] border border-[#e5eaf3] p-4">
+      <section className="hero-section hero-bg flex items-start justify-between gap-3 rounded-[18px] border border-[#e5eaf3] p-[14px]">
         <div>
           <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
             Dashboard Overview
@@ -243,7 +243,7 @@ export function DashboardPage() {
           </p>
         </div>
 
-        <div className="health-box min-w-[260px] rounded-[14px] border border-[#e5eaf3] bg-white p-3 shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
+        <div className="health-box min-w-[260px] rounded-[16px] border border-[#dbe7ff] bg-[rgba(247,250,255,0.9)] p-[12px]">
           <div className="flex items-center justify-between gap-[10px]">
             <div>
               <div className="text-[22px] font-black text-[#0b2b55]">
@@ -259,7 +259,7 @@ export function DashboardPage() {
                 onClick={fetchAll}
                 disabled={loading}
                 title="Refresh"
-                className="cursor-pointer rounded-full border border-[#e5eaf3] bg-white px-[10px] py-[3px] text-[13px] text-[#64748b] hover:bg-[#f5f7fb] disabled:opacity-40"
+                className="cursor-pointer rounded-full border border-[#dbe7ff] bg-white px-[10px] py-[3px] text-[13px] text-[#64748b] hover:bg-[#f5f7fb] disabled:opacity-40"
               >
                 {loading ? '…' : '↻'}
               </button>

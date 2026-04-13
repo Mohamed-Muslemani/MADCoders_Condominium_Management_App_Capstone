@@ -206,6 +206,18 @@ export function ExpenseCategoriesPage() {
     void loadCategories();
   }, [loadCategories]);
 
+  useEffect(() => {
+    function handleCreateEvent() {
+      openCreate();
+    }
+
+    window.addEventListener('admin-categories-create', handleCreateEvent);
+
+    return () => {
+      window.removeEventListener('admin-categories-create', handleCreateEvent);
+    };
+  }, []);
+
   const filteredCategories = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -302,10 +314,10 @@ export function ExpenseCategoriesPage() {
   return (
     <>
       <section
-        className="rounded-[18px] border border-[#e5eaf3] p-4"
+        className="rounded-[18px] border border-[#e5eaf3] p-[14px]"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
       >
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
               Expense Categories

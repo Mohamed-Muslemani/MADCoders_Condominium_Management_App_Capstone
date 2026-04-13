@@ -134,7 +134,6 @@ export function OwnerDashboardPage() {
   const user = state.profile;
   const ownerName = `${user.firstName} ${user.lastName}`.trim();
   const avatarLetter = user.firstName.trim().charAt(0).toUpperCase() || 'O';
-  const latestMaintenance = state.maintenance[0];
   const maintenanceStatusLabel =
     openMaintenanceCount > 0 ? 'Attention needed' : 'Up to date';
   const activeUnit = state.activeOwnership?.unit ?? null;
@@ -233,7 +232,7 @@ export function OwnerDashboardPage() {
         <section className="owner-dashboard-card">
           <div className="owner-dashboard-card-head">
             <strong>
-              Dues
+              Payments
             </strong>
             <span className="owner-shell-nav-pill">
               {activeUnit ? `Unit ${activeUnit.unitNumber}` : 'Unit pending'}
@@ -282,18 +281,6 @@ export function OwnerDashboardPage() {
                 <small>Status</small>
                 <strong>
                   {duesSummary.currentStatus === 'UNPAID' ? 'Overdue' : 'Paid'}
-                </strong>
-              </div>
-              <div className="owner-dashboard-stat">
-                <small>Account status</small>
-                <strong>
-                  {user.active ? 'Active' : 'Inactive'}
-                </strong>
-              </div>
-              <div className="owner-dashboard-stat">
-                <small>Latest request</small>
-                <strong>
-                  {latestMaintenance ? formatDate(latestMaintenance.updatedAt) : 'None yet'}
                 </strong>
               </div>
             </div>
@@ -436,12 +423,6 @@ export function OwnerDashboardPage() {
                 <small>Recent requests</small>
                 <strong>
                   {state.maintenance.length}
-                </strong>
-              </div>
-              <div className="owner-dashboard-kv">
-                <small>Last maintenance priority</small>
-                <strong>
-                  {latestMaintenance ? latestMaintenance.priority : 'None yet'}
                 </strong>
               </div>
               <div className="owner-dashboard-kv">

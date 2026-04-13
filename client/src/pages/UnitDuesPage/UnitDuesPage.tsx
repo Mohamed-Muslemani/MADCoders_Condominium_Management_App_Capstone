@@ -447,6 +447,18 @@ export function UnitDuesPage() {
 
   useEffect(() => { fetchAll(); }, [location.key]);
 
+  useEffect(() => {
+    function handleCreateEvent() {
+      openCreate();
+    }
+
+    window.addEventListener('admin-payments-create', handleCreateEvent);
+
+    return () => {
+      window.removeEventListener('admin-payments-create', handleCreateEvent);
+    };
+  }, []);
+
   function getOwnerName(unitId: string) {
     const record = unitOwners.find(o => o.unitId === unitId && !o.endDate);
     return record ? `${record.user.firstName} ${record.user.lastName}` : 'No Owner';
@@ -563,10 +575,10 @@ export function UnitDuesPage() {
     <>
       {/* ── Hero ── */}
       <section
-        className="rounded-[18px] border border-[#e5eaf3] p-4"
+        className="rounded-[18px] border border-[#e5eaf3] p-[14px]"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
       >
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
               Payments
@@ -588,15 +600,15 @@ export function UnitDuesPage() {
         {/* Stats row */}
         {!loading && (
           <div className="mt-3 grid grid-cols-3 gap-3">
-            <div className="rounded-[14px] border border-[#e5eaf3] bg-white p-3 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[14px] border border-[#eef2f7] bg-[rgba(255,255,255,0.76)] p-[11px]">
               <p className="m-0 text-[11px] font-black uppercase tracking-[.06em] text-[#64748b]">Unpaid</p>
               <p className="m-0 mt-1 text-[18px] font-black tracking-[-0.02em] text-[#991b1b]">${formatCurrency(totalUnpaid)}</p>
             </div>
-            <div className="rounded-[14px] border border-[#e5eaf3] bg-white p-3 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[14px] border border-[#eef2f7] bg-[rgba(255,255,255,0.76)] p-[11px]">
               <p className="m-0 text-[11px] font-black uppercase tracking-[.06em] text-[#64748b]">Paid</p>
               <p className="m-0 mt-1 text-[18px] font-black tracking-[-0.02em] text-[#166534]">${formatCurrency(totalPaid)}</p>
             </div>
-            <div className="rounded-[14px] border border-[#e5eaf3] bg-white p-3 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[14px] border border-[#eef2f7] bg-[rgba(255,255,255,0.76)] p-[11px]">
               <p className="m-0 text-[11px] font-black uppercase tracking-[.06em] text-[#64748b]">Waived</p>
               <p className="m-0 mt-1 text-[18px] font-black tracking-[-0.02em] text-[#0369a1]">${formatCurrency(totalWaived)}</p>
             </div>
@@ -765,12 +777,24 @@ export function UnitDuesPage() {
                     </td>
                   </tr>
                 ) : pageItems.map(d => (
-                  <tr key={d.dueId}>
+                  <tr
+                    key={d.dueId}
+                    className="dues-row"
+                    onClick={() => openEdit(d)}
+                    tabIndex={0}
+                    role="button"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openEdit(d);
+                      }
+                    }}
+                  >
                     <td>
-                      <button className="row-link" onClick={() => openEdit(d)}>
+                      <div className="row-link">
                         <div className="cell-title">{d.unit?.unitNumber ?? '—'}</div>
                         <div className="cell-sub">{getOwnerName(d.unitId)}</div>
-                      </button>
+                      </div>
                     </td>
                     <td><div className="cell-main">{d.periodMonth?.slice(0, 7) ?? '—'}</div></td>
                     <td><div className="cell-main">{d.dueDate?.slice(0, 10) ?? '—'}</div></td>

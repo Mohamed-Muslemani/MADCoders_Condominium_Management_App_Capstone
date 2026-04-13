@@ -4,8 +4,6 @@ import { getOwnerDashboard } from '../../api/owner';
 import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
   OwnerActionButton,
-  OwnerCard,
-  OwnerStatCard,
   OwnerStatusPill,
   OwnerViewState,
 } from '../../components/owner/OwnerUi';
@@ -195,129 +193,147 @@ export function OwnerProfilePage() {
     >
       <div className="owner-profile-page">
         <section className="owner-profile-hero">
-          <div>
-            <h2>My Profile</h2>
-            <p>Review your account details and update your contact information.</p>
+          <div className="owner-profile-hero-top">
+            <div>
+              <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
+                My Profile
+              </h2>
+              <p className="m-0 mt-[6px] text-[13px] leading-[1.35] text-[#64748b]">
+                Review your account details and update your contact information.
+              </p>
+            </div>
+
+            <OwnerStatusPill
+              label={user?.active ? 'Account active' : 'Account inactive'}
+              tone={user?.active ? 'good' : 'warn'}
+            />
           </div>
 
-          <OwnerStatusPill
-            label={user?.active ? 'Account active' : 'Account inactive'}
-            tone={user?.active ? 'good' : 'warn'}
-          />
+          <div className="owner-profile-stats">
+            <div className="owner-profile-stat-card owner-profile-stat-card-wide">
+              <p>Email</p>
+              <strong>{user?.email ?? 'Unavailable'}</strong>
+            </div>
+            <div className="owner-profile-stat-card">
+              <p>Member Since</p>
+              <strong>{formatDate(user?.createdAt)}</strong>
+            </div>
+            <div className="owner-profile-stat-card">
+              <p>Status</p>
+              <strong>{user?.active ? 'Active' : 'Inactive'}</strong>
+            </div>
+            <div className="owner-profile-stat-card">
+              <p>Unit</p>
+              <strong>{activeUnit ? `Unit ${activeUnit.unitNumber}` : 'Pending'}</strong>
+            </div>
+            <div className="owner-profile-stat-card">
+              <p>Role</p>
+              <strong>{user?.role ?? 'Owner'}</strong>
+            </div>
+          </div>
         </section>
 
-        <div className="owner-profile-grid">
-          <OwnerCard title="Account Summary">
-            <div className="owner-profile-stats">
-              <OwnerStatCard label="Role" value={user?.role ?? 'Owner'} />
-              <OwnerStatCard
-                label="Email"
-                value={user?.email ?? 'Unavailable'}
-              />
-              <OwnerStatCard
-                label="Member Since"
-                value={formatDate(user?.createdAt)}
-              />
-              <OwnerStatCard
-                label="Unit"
-                value={activeUnit ? `Unit ${activeUnit.unitNumber}` : 'Pending'}
-              />
+        <section className="owner-profile-card">
+          <div className="owner-profile-card-head">
+            <div>
+              <h3>Account Details</h3>
+              <p>Update contact information and manage your login credentials here.</p>
             </div>
-          </OwnerCard>
-
-          <OwnerCard
-            title="Contact Details"
-            action={
+            <div className="owner-profile-card-actions">
               <OwnerActionButton variant="primary" onClick={() => void handleSave()}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </OwnerActionButton>
-            }
-          >
-            <div className="owner-profile-form">
-              {error ? (
-                <OwnerViewState
-                  tone="error"
-                  title="Could not save profile"
-                  description={error}
-                />
-              ) : null}
-
-              {success ? (
-                <div className="owner-profile-success">{success}</div>
-              ) : null}
-
-              <div className="owner-profile-field-grid">
-                <label className="owner-profile-field">
-                  <span>First Name</span>
-                  <input
-                    value={form.firstName}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, firstName: event.target.value }))
-                    }
-                  />
-                </label>
-
-                <label className="owner-profile-field">
-                  <span>Last Name</span>
-                  <input
-                    value={form.lastName}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, lastName: event.target.value }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <label className="owner-profile-field">
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, email: event.target.value }))
-                  }
-                />
-              </label>
-
-              <label className="owner-profile-field">
-                <span>Phone</span>
-                <input
-                  value={form.phone}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, phone: event.target.value }))
-                  }
-                  placeholder="Add a phone number"
-                />
-              </label>
-
-              <div className="owner-profile-field-grid">
-                <label className="owner-profile-field">
-                  <span>New Password</span>
-                  <input
-                    type="password"
-                    value={form.password}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, password: event.target.value }))
-                    }
-                    placeholder="Leave blank to keep current password"
-                  />
-                </label>
-
-                <label className="owner-profile-field">
-                  <span>Confirm New Password</span>
-                  <input
-                    type="password"
-                    value={form.confirmPassword}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, confirmPassword: event.target.value }))
-                    }
-                    placeholder="Repeat new password"
-                  />
-                </label>
-              </div>
             </div>
-          </OwnerCard>
-        </div>
+          </div>
+
+          <div className="owner-profile-form">
+            {error ? (
+              <OwnerViewState
+                tone="error"
+                title="Could not save profile"
+                description={error}
+              />
+            ) : null}
+
+            {success ? (
+              <div className="owner-profile-success">{success}</div>
+            ) : null}
+
+            <div className="owner-profile-field-grid">
+              <label className="owner-profile-field">
+                <span>First Name</span>
+                <input
+                  value={form.firstName}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, firstName: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="owner-profile-field">
+                <span>Last Name</span>
+                <input
+                  value={form.lastName}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, lastName: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+
+            <label className="owner-profile-field">
+              <span>Email</span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, email: event.target.value }))
+                }
+              />
+            </label>
+
+            <label className="owner-profile-field">
+              <span>Phone</span>
+              <input
+                value={form.phone}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, phone: event.target.value }))
+                }
+                placeholder="Add a phone number"
+              />
+            </label>
+
+            <div className="owner-profile-field-grid">
+              <label className="owner-profile-field">
+                <span>New Password</span>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, password: event.target.value }))
+                  }
+                  placeholder="Leave blank to keep current password"
+                />
+              </label>
+
+              <label className="owner-profile-field">
+                <span>Confirm New Password</span>
+                <input
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, confirmPassword: event.target.value }))
+                  }
+                  placeholder="Repeat new password"
+                />
+              </label>
+            </div>
+
+            <div className="owner-profile-help">
+              Leave the password fields blank to keep your current password.
+            </div>
+          </div>
+        </section>
       </div>
     </OwnerLayout>
   );

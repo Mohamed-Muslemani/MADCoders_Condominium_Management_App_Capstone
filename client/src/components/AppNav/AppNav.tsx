@@ -14,11 +14,10 @@ import './AppNav.css';
 
 const adminLinks = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/profile', label: 'Profile' },
   { to: '/users', label: 'Users' },
   { to: '/units', label: 'Units' },
   { to: '/unit-owners', label: 'Ownerships' },
-  { to: '/unit-dues', label: 'Dues' },
+  { to: '/unit-dues', label: 'Payments' },
   { to: '/reserve-transactions', label: 'Expenses' },
   { to: '/expense-categories', label: 'Categories' },
   { to: '/maintenance-requests', label: 'Maintenance' },
@@ -150,9 +149,9 @@ export function AppNav() {
     };
   }, [location.pathname]);
 
-  const primaryLinks = useMemo(() => adminLinks.slice(0, 5), []);
-  const operationsLinks = useMemo(() => adminLinks.slice(5, 10), []);
-  const resourcesLinks = useMemo(() => adminLinks.slice(10), []);
+  const primaryLinks = useMemo(() => adminLinks.slice(0, 4), []);
+  const operationsLinks = useMemo(() => adminLinks.slice(4, 9), []);
+  const resourcesLinks = useMemo(() => adminLinks.slice(9), []);
 
   return (
     <>

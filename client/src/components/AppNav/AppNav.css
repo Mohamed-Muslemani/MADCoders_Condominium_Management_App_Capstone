@@ -7,7 +7,7 @@
   overflow: auto;
   border-radius: 18px;
   border: 1px solid #e5eaf3;
-  padding: 14px 10px;
+  padding: 12px 8px;
 }
 
 .sidebar-nav {
@@ -20,7 +20,7 @@
   text-decoration: none;
   color: #0f172a;
   font-size: 13px;
-  padding: 12px 12px;
+  padding: 11px 10px;
   border-radius: 14px;
   display: flex;
   align-items: center;
