@@ -79,10 +79,7 @@ function DueDrawer({
   units: Unit[];
   saving: boolean;
   toast: string;
-  reminderState: {
-    sending: boolean;
-    error: string;
-  };
+  reminderState: { sending: boolean; error: string; };
   onClose: () => void;
   onSave: (d: CreateUnitDueRequest | UpdateUnitDueRequest) => void;
   onDelete: () => void;
@@ -115,10 +112,10 @@ function DueDrawer({
 
   function validate() {
     const errs: Record<string, string> = {};
-    if (!unitId)           errs.unitId      = 'Unit is required.';
-    if (!periodMonth)      errs.periodMonth = 'Period month is required.';
-    if (!dueDate)          errs.dueDate     = 'Due date is required.';
-    if (!amount)           errs.amount      = 'Amount is required.';
+    if (!unitId)      errs.unitId      = 'Unit is required.';
+    if (!periodMonth) errs.periodMonth = 'Period month is required.';
+    if (!dueDate)     errs.dueDate     = 'Due date is required.';
+    if (!amount)      errs.amount      = 'Amount is required.';
     else if (isNaN(Number(amount)) || Number(amount) < 0) errs.amount = 'Must be a valid amount.';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -233,24 +230,14 @@ function DueDrawer({
                 {due?.status === 'UNPAID' ? (
                   <div className="danger-row dues-action-row">
                     <div>
-                      <strong className="block text-[13px] text-[#0f172a]">
-                        Send Reminder
-                      </strong>
+                      <strong className="block text-[13px] text-[#0f172a]">Send Reminder</strong>
                       <small className="mt-[3px] block text-[12px] leading-[1.25] text-[#64748b]">
                         Email the active owner for this unit about the unpaid due.
-                        {due.emailNotifiedAt
-                          ? ` Last sent ${due.emailNotifiedAt.slice(0, 10)}.`
-                          : ''}
+                        {due.emailNotifiedAt ? ` Last sent ${due.emailNotifiedAt.slice(0, 10)}.` : ''}
                       </small>
-                      {reminderState.error ? (
-                        <div className="field-err">{reminderState.error}</div>
-                      ) : null}
+                      {reminderState.error ? <div className="field-err">{reminderState.error}</div> : null}
                     </div>
-                    <button
-                      className="btn-soft"
-                      onClick={onSendReminder}
-                      disabled={reminderState.sending}
-                    >
+                    <button className="btn-soft" onClick={onSendReminder} disabled={reminderState.sending}>
                       {reminderState.sending ? 'Sending…' : 'Send Reminder'}
                     </button>
                   </div>
@@ -291,10 +278,7 @@ function DueDrawer({
 }
 
 function ImportDrawer({
-  batch,
-  loading,
-  error,
-  onClose,
+  batch, loading, error, onClose,
 }: {
   batch: DuesImportBatch | null;
   loading: boolean;
@@ -347,7 +331,6 @@ function ImportDrawer({
                     <strong>{countImportLines(batch, 'FAILED')}</strong>
                   </div>
                 </div>
-
                 <div className="dues-import-meta">
                   Imported {formatDate(batch.importedAt)} by {batch.importedBy.firstName} {batch.importedBy.lastName}
                 </div>
@@ -368,9 +351,7 @@ function ImportDrawer({
                       <span>Due: {formatDate(line.dueDate)}</span>
                       <span>Status: {line.status ?? '—'}</span>
                     </div>
-                    {line.errorReason ? (
-                      <div className="field-err">{line.errorReason}</div>
-                    ) : null}
+                    {line.errorReason ? <div className="field-err">{line.errorReason}</div> : null}
                   </article>
                 ))}
               </div>
@@ -403,14 +384,14 @@ export function UnitDuesPage() {
   const [error,      setError]      = useState('');
   const [toast,      setToast]      = useState('');
   const [uploadingImport, setUploadingImport] = useState(false);
-  const [importError, setImportError] = useState('');
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [importDrawerOpen, setImportDrawerOpen] = useState(false);
-  const [activeImportBatch, setActiveImportBatch] = useState<DuesImportBatch | null>(null);
+  const [importError,     setImportError]     = useState('');
+  const [importFile,      setImportFile]      = useState<File | null>(null);
+  const [importDrawerOpen,    setImportDrawerOpen]    = useState(false);
+  const [activeImportBatch,   setActiveImportBatch]   = useState<DuesImportBatch | null>(null);
   const [importDetailLoading, setImportDetailLoading] = useState(false);
-  const [importDetailError, setImportDetailError] = useState('');
+  const [importDetailError,   setImportDetailError]   = useState('');
   const [reminderSending, setReminderSending] = useState(false);
-  const [reminderError, setReminderError] = useState('');
+  const [reminderError,   setReminderError]   = useState('');
 
   const [search,   setSearch]  = useState('');
   const [statusF,  setStatusF] = useState('');
@@ -432,15 +413,9 @@ export function UnitDuesPage() {
     try {
       setLoading(true); setError('');
       const [d, u, o, batches] = await Promise.all([
-        getUnitDues(),
-        getUnits(),
-        getUnitOwners(),
-        getDuesImportBatches(),
+        getUnitDues(), getUnits(), getUnitOwners(), getDuesImportBatches(),
       ]);
-      setDues(d);
-      setUnits(u);
-      setUnitOwners(o);
-      setImportBatches(batches);
+      setDues(d); setUnits(u); setUnitOwners(o); setImportBatches(batches);
     } catch { setError('Could not load payments'); }
     finally { setLoading(false); }
   }, []);
@@ -448,15 +423,9 @@ export function UnitDuesPage() {
   useEffect(() => { fetchAll(); }, [location.key]);
 
   useEffect(() => {
-    function handleCreateEvent() {
-      openCreate();
-    }
-
+    function handleCreateEvent() { openCreate(); }
     window.addEventListener('admin-payments-create', handleCreateEvent);
-
-    return () => {
-      window.removeEventListener('admin-payments-create', handleCreateEvent);
-    };
+    return () => window.removeEventListener('admin-payments-create', handleCreateEvent);
   }, []);
 
   function getOwnerName(unitId: string) {
@@ -530,52 +499,73 @@ export function UnitDuesPage() {
   function exportCSV() {
     const escapeCsv = (value: string | number | null | undefined) =>
       `"${String(value ?? '').replaceAll('"', '""')}"`;
-
-    const header = [
-      'unit_number',
-      'period_month',
-      'due_date',
-      'amount',
-      'status',
-      'paid_date',
-      'note',
-    ].join(',');
+    const header = ['unit_number','period_month','due_date','amount','status','paid_date','note'].join(',');
     const rows = filtered.map((d) =>
-      [
-        escapeCsv(d.unit?.unitNumber ?? ''),
-        escapeCsv(d.periodMonth?.slice(0, 7) ?? ''),
-        escapeCsv(d.dueDate?.slice(0, 10) ?? ''),
-        escapeCsv(d.amount),
-        escapeCsv(d.status),
-        escapeCsv(d.paidDate?.slice(0, 10) ?? ''),
-        escapeCsv(d.note ?? ''),
-      ].join(','),
+      [escapeCsv(d.unit?.unitNumber ?? ''), escapeCsv(d.periodMonth?.slice(0,7) ?? ''),
+       escapeCsv(d.dueDate?.slice(0,10) ?? ''), escapeCsv(d.amount), escapeCsv(d.status),
+       escapeCsv(d.paidDate?.slice(0,10) ?? ''), escapeCsv(d.note ?? '')].join(',')
     );
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(
-      new Blob([[header, ...rows].join('\n')], { type: 'text/csv' }),
-    );
-    a.download = 'unit-dues-export.csv';
-    a.click();
+    a.href = URL.createObjectURL(new Blob([[header,...rows].join('\n')],{type:'text/csv'}));
+    a.download = 'unit-dues-export.csv'; a.click();
   }
 
   function downloadImportTemplate() {
     const blob = new Blob([UNIT_DUES_TEMPLATE], { type: 'text/csv;charset=utf-8' });
-    const blobUrl = URL.createObjectURL(blob);
+    const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = 'unit-dues-template.csv';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(blobUrl);
+    link.href = url; link.download = 'unit-dues-template.csv';
+    document.body.appendChild(link); link.click(); link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportCsv() {
+    if (!importFile) return;
+    try {
+      setUploadingImport(true); setImportError('');
+      const batch = await importUnitDuesCsv(importFile);
+      setImportFile(null);
+      await fetchAll();
+      showToast('Dues imported successfully.');
+      setActiveImportBatch(batch); setImportDetailError(''); setImportDrawerOpen(true);
+    } catch { setImportError('Could not import the CSV file.'); }
+    finally { setUploadingImport(false); }
+  }
+
+  async function openImportBatch(importBatchId: string) {
+    try {
+      setImportDrawerOpen(true); setImportDetailLoading(true); setImportDetailError('');
+      const batch = await getDuesImportBatch(importBatchId);
+      setActiveImportBatch(batch);
+    } catch { setImportDetailError('Could not load import batch details.'); }
+    finally { setImportDetailLoading(false); }
+  }
+
+  function closeImportDrawer() {
+    setImportDrawerOpen(false); setActiveImportBatch(null); setImportDetailError('');
+  }
+
+  async function handleSendReminder() {
+    if (!active) return;
+    try {
+      setReminderSending(true); setReminderError('');
+      const response = await sendUnitDueReminder(active.dueId);
+      setActive(response.due);
+      setDues((current) => current.map((due) => due.dueId === response.due.dueId ? response.due : due));
+      showToast(
+        response.recipients.length > 0
+          ? `Reminder sent to ${response.recipients.length} recipient${response.recipients.length === 1 ? '' : 's'}.`
+          : response.message,
+      );
+    } catch { setReminderError('Could not send a reminder for this due.'); }
+    finally { setReminderSending(false); }
   }
 
   return (
     <>
       {/* ── Hero ── */}
       <section
-        className="rounded-[18px] border border-[#e5eaf3] p-[14px]"
+        className="rounded-[18px] border border-[#e5eaf3] p-[16px]"
         style={{ background: 'linear-gradient(180deg,#ffffff,#fbfcff)' }}
       >
         <div className="flex items-start justify-between gap-3">
@@ -597,20 +587,20 @@ export function UnitDuesPage() {
           </div>
         </div>
 
-        {/* Stats row */}
+        {/* ── Stats row ── */}
         {!loading && (
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            <div className="rounded-[14px] border border-[#eef2f7] bg-[rgba(255,255,255,0.76)] p-[11px]">
-              <p className="m-0 text-[11px] font-black uppercase tracking-[.06em] text-[#64748b]">Unpaid</p>
-              <p className="m-0 mt-1 text-[18px] font-black tracking-[-0.02em] text-[#991b1b]">${formatCurrency(totalUnpaid)}</p>
+          <div className="mt-[14px] grid grid-cols-3 gap-[12px]">
+            <div className="dues-stat-card">
+              <p className="dues-stat-label">Unpaid</p>
+              <p className="dues-stat-value">${formatCurrency(totalUnpaid)}</p>
             </div>
-            <div className="rounded-[14px] border border-[#eef2f7] bg-[rgba(255,255,255,0.76)] p-[11px]">
-              <p className="m-0 text-[11px] font-black uppercase tracking-[.06em] text-[#64748b]">Paid</p>
-              <p className="m-0 mt-1 text-[18px] font-black tracking-[-0.02em] text-[#166534]">${formatCurrency(totalPaid)}</p>
+            <div className="dues-stat-card">
+              <p className="dues-stat-label">Paid</p>
+              <p className="dues-stat-value">${formatCurrency(totalPaid)}</p>
             </div>
-            <div className="rounded-[14px] border border-[#eef2f7] bg-[rgba(255,255,255,0.76)] p-[11px]">
-              <p className="m-0 text-[11px] font-black uppercase tracking-[.06em] text-[#64748b]">Waived</p>
-              <p className="m-0 mt-1 text-[18px] font-black tracking-[-0.02em] text-[#0369a1]">${formatCurrency(totalWaived)}</p>
+            <div className="dues-stat-card">
+              <p className="dues-stat-label">Waived</p>
+              <p className="dues-stat-value">${formatCurrency(totalWaived)}</p>
             </div>
           </div>
         )}
@@ -622,6 +612,7 @@ export function UnitDuesPage() {
         </div>
       )}
 
+      {/* ── CSV Imports ── */}
       <section className="dues-imports-panel">
         <div className="dues-imports-head">
           <div>
@@ -637,11 +628,7 @@ export function UnitDuesPage() {
           <div className="dues-import-card">
             <div className="dues-import-card-head">
               <label className="form-label m-0" htmlFor="dues-import-file">Import CSV</label>
-              <button
-                className="btn-ghost"
-                type="button"
-                onClick={downloadImportTemplate}
-              >
+              <button className="btn-ghost" type="button" onClick={downloadImportTemplate}>
                 Download Template
               </button>
             </div>
@@ -650,7 +637,7 @@ export function UnitDuesPage() {
               className="dues-import-file"
               type="file"
               accept=".csv,text/csv"
-              onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
+              onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
             />
             <div className="dues-import-help">
               {importFile
@@ -660,9 +647,7 @@ export function UnitDuesPage() {
             <div className="dues-import-example">
               Example: <code>101,2026-04,2026-04-05,500,UNPAID,,April dues</code>
             </div>
-            {importError ? (
-              <div className="field-err">{importError}</div>
-            ) : null}
+            {importError ? <div className="field-err">{importError}</div> : null}
             <div className="dues-import-actions">
               <button
                 className="btn-solid"
@@ -783,12 +768,7 @@ export function UnitDuesPage() {
                     onClick={() => openEdit(d)}
                     tabIndex={0}
                     role="button"
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        openEdit(d);
-                      }
-                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(d); } }}
                   >
                     <td>
                       <div className="row-link">
@@ -822,7 +802,7 @@ export function UnitDuesPage() {
         </div>
       </div>
 
-      {/* ── Drawer ── */}
+      {/* ── Drawers ── */}
       {drawer && (
         <DueDrawer
           mode={mode}
@@ -830,10 +810,7 @@ export function UnitDuesPage() {
           units={units}
           saving={saving}
           toast={toast}
-          reminderState={{
-            sending: reminderSending,
-            error: reminderError,
-          }}
+          reminderState={{ sending: reminderSending, error: reminderError }}
           onClose={closeDrawer}
           onSave={handleSave}
           onDelete={handleDelete}
@@ -841,77 +818,14 @@ export function UnitDuesPage() {
         />
       )}
 
-      {importDrawerOpen ? (
+      {importDrawerOpen && (
         <ImportDrawer
           batch={activeImportBatch}
           loading={importDetailLoading}
           error={importDetailError}
           onClose={closeImportDrawer}
         />
-      ) : null}
+      )}
     </>
   );
-
-  async function handleImportCsv() {
-    if (!importFile) return;
-
-    try {
-      setUploadingImport(true);
-      setImportError('');
-      const batch = await importUnitDuesCsv(importFile);
-      setImportFile(null);
-      await fetchAll();
-      showToast('Dues imported successfully.');
-      setActiveImportBatch(batch);
-      setImportDetailError('');
-      setImportDrawerOpen(true);
-    } catch {
-      setImportError('Could not import the CSV file.');
-    } finally {
-      setUploadingImport(false);
-    }
-  }
-
-  async function openImportBatch(importBatchId: string) {
-    try {
-      setImportDrawerOpen(true);
-      setImportDetailLoading(true);
-      setImportDetailError('');
-      const batch = await getDuesImportBatch(importBatchId);
-      setActiveImportBatch(batch);
-    } catch {
-      setImportDetailError('Could not load import batch details.');
-    } finally {
-      setImportDetailLoading(false);
-    }
-  }
-
-  function closeImportDrawer() {
-    setImportDrawerOpen(false);
-    setActiveImportBatch(null);
-    setImportDetailError('');
-  }
-
-  async function handleSendReminder() {
-    if (!active) return;
-
-    try {
-      setReminderSending(true);
-      setReminderError('');
-      const response = await sendUnitDueReminder(active.dueId);
-      setActive(response.due);
-      setDues((current) =>
-        current.map((due) => (due.dueId === response.due.dueId ? response.due : due)),
-      );
-      showToast(
-        response.recipients.length > 0
-          ? `Reminder sent to ${response.recipients.length} recipient${response.recipients.length === 1 ? '' : 's'}.`
-          : response.message,
-      );
-    } catch {
-      setReminderError('Could not send a reminder for this due.');
-    } finally {
-      setReminderSending(false);
-    }
-  }
 }
