@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import type { OwnerLayoutUser, OwnerNavBadgeMap, OwnerRouteKey } from '../../types/owner';
+import { getReserveTransactions } from '../../api/reserveTransactions';
+import type { OwnerNavBadgeMap, OwnerRouteKey } from '../../types/owner';
 import { ownerRoutePaths } from '../../types/owner';
 
 const ownerNavGroups: Array<Array<{ key: OwnerRouteKey; label: string }>> = [
@@ -9,6 +10,7 @@ const ownerNavGroups: Array<Array<{ key: OwnerRouteKey; label: string }>> = [
   ],
   [
     { key: 'dues',        label: 'Dues' },
+    { key: 'transactions', label: 'Transactions' },
     { key: 'maintenance', label: 'Maintenance' },
     { key: 'documents',   label: 'Documents' },
   ],
@@ -17,15 +19,44 @@ const ownerNavGroups: Array<Array<{ key: OwnerRouteKey; label: string }>> = [
 export function OwnerSidebar({
   activeRoute,
   badges,
-  user,
-  unitLabel,
 }: {
   activeRoute: OwnerRouteKey;
   badges?: OwnerNavBadgeMap;
-  user?: OwnerLayoutUser | null;
-  unitLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [transactionBadge, setTransactionBadge] = useState<string>('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTransactionBadge() {
+      try {
+        const transactions = await getReserveTransactions();
+
+        if (!cancelled) {
+          setTransactionBadge(`${transactions.length} total`);
+        }
+      } catch {
+        if (!cancelled) {
+          setTransactionBadge('');
+        }
+      }
+    }
+
+    void loadTransactionBadge();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const resolvedBadges = useMemo(
+    () => ({
+      ...badges,
+      transactions: transactionBadge || badges?.transactions,
+    }),
+    [badges, transactionBadge],
+  );
 
   return (
     <>
@@ -84,7 +115,7 @@ export function OwnerSidebar({
             <div key={groupIndex}>
               {groupIndex > 0 && <div className="owner-shell-divider" />}
               {group.map((item) => {
-                const badge = badges?.[item.key];
+                const badge = resolvedBadges?.[item.key];
                 return (
                   <NavLink
                     key={item.key}

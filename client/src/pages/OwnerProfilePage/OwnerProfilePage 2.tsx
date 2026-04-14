@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { updateCurrentUserProfile } from '../../api/users';
-import { getOwnerDashboard, getSelectedOwnerUnitId, setSelectedOwnerUnitId } from '../../api/owner';
+import { getOwnerDashboard } from '../../api/owner';
 import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
   OwnerActionButton,
@@ -15,7 +15,6 @@ type FormState = {
   lastName: string;
   email: string;
   phone: string;
-  currentPassword: string;
   password: string;
   confirmPassword: string;
 };
@@ -43,7 +42,6 @@ export function OwnerProfilePage() {
     lastName: '',
     email: '',
     phone: '',
-    currentPassword: '',
     password: '',
     confirmPassword: '',
   });
@@ -51,24 +49,18 @@ export function OwnerProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPasswordFields, setShowPasswordFields] = useState(false);
-  const [selectedUnitId, setSelectedUnitIdState] = useState(() => getSelectedOwnerUnitId());
 
-  async function loadPage(unitId = selectedUnitId) {
+  async function loadPage() {
     try {
       setLoading(true);
       setError('');
-      const data = await getOwnerDashboard(unitId || undefined);
+      const data = await getOwnerDashboard();
       setDashboard(data);
-      const resolvedUnitId = data.activeOwnership?.unit.unitId ?? '';
-      setSelectedOwnerUnitId(resolvedUnitId);
-      setSelectedUnitIdState(resolvedUnitId);
       setForm({
         firstName: data.profile.firstName,
         lastName: data.profile.lastName,
         email: data.profile.email,
         phone: data.profile.phone ?? '',
-        currentPassword: '',
         password: '',
         confirmPassword: '',
       });
@@ -89,7 +81,6 @@ export function OwnerProfilePage() {
 
   const user = dashboard?.profile ?? null;
   const activeUnit = dashboard?.activeOwnership?.unit ?? null;
-  const ownerships = dashboard?.activeOwnerships ?? [];
 
   const navBadges: OwnerNavBadgeMap = useMemo(
     () => ({
@@ -97,7 +88,6 @@ export function OwnerProfilePage() {
       dues: dashboard?.duesSummary.unpaidCount
         ? `${dashboard.duesSummary.unpaidCount} unpaid`
         : 'Up to date',
-      transactions: 'View all',
       maintenance: dashboard?.maintenance.length
         ? `${dashboard.maintenance.length} total`
         : '0 total',
@@ -111,7 +101,6 @@ export function OwnerProfilePage() {
     const firstName = form.firstName.trim();
     const lastName = form.lastName.trim();
     const email = form.email.trim();
-    const currentPassword = form.currentPassword;
     const password = form.password.trim();
 
     if (!firstName || !lastName) {
@@ -129,16 +118,6 @@ export function OwnerProfilePage() {
       return;
     }
 
-    if (showPasswordFields && !currentPassword.trim()) {
-      setError('Current password is required to change your password.');
-      return;
-    }
-
-    if (showPasswordFields && !password) {
-      setError('Enter a new password to complete the password change.');
-      return;
-    }
-
     if (password && password !== form.confirmPassword) {
       setError('Password confirmation does not match.');
       return;
@@ -153,12 +132,9 @@ export function OwnerProfilePage() {
         lastName,
         email,
         phone: form.phone.trim() || null,
-        ...(password
-          ? { password, currentPassword: currentPassword.trim() }
-          : {}),
+        ...(password ? { password } : {}),
       });
       await loadPage();
-      setShowPasswordFields(false);
       setSuccess(password ? 'Your profile and password have been updated.' : 'Your profile has been updated.');
     } catch (requestError) {
       setError(
@@ -219,32 +195,12 @@ export function OwnerProfilePage() {
         <section className="owner-profile-hero">
           <div className="owner-profile-hero-top">
             <div>
-              <h2 className="m-0 text-[20px] font-semibold tracking-[-0.03em] text-[#0f172a]">
+              <h2 className="m-0 text-[20px] font-black tracking-[-0.03em] text-[#0f172a]">
                 My Profile
               </h2>
               <p className="m-0 mt-[6px] text-[13px] leading-[1.35] text-[#64748b]">
                 Review your account details and update your contact information.
               </p>
-              {ownerships.length > 1 ? (
-                <div className="owner-profile-unit-switcher">
-                  <span>Viewing unit</span>
-                  <select
-                    value={selectedUnitId}
-                    onChange={(event) => {
-                      const nextUnitId = event.target.value;
-                      setSelectedOwnerUnitId(nextUnitId);
-                      setSelectedUnitIdState(nextUnitId);
-                      void loadPage(nextUnitId);
-                    }}
-                  >
-                    {ownerships.map((ownership) => (
-                      <option key={ownership.unit.unitId} value={ownership.unit.unitId}>
-                        Unit {ownership.unit.unitNumber}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
             </div>
 
             <OwnerStatusPill
@@ -284,21 +240,6 @@ export function OwnerProfilePage() {
               <p>Update contact information and manage your login credentials here.</p>
             </div>
             <div className="owner-profile-card-actions">
-              <OwnerActionButton
-                onClick={() => {
-                  setShowPasswordFields((current) => !current);
-                  setError('');
-                  setSuccess('');
-                  setForm((current) => ({
-                    ...current,
-                    currentPassword: '',
-                    password: '',
-                    confirmPassword: '',
-                  }));
-                }}
-              >
-                {showPasswordFields ? 'Cancel Password Change' : 'Change Password'}
-              </OwnerActionButton>
               <OwnerActionButton variant="primary" onClick={() => void handleSave()}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </OwnerActionButton>
@@ -362,59 +303,35 @@ export function OwnerProfilePage() {
               />
             </label>
 
-            {showPasswordFields ? (
-              <div className="owner-profile-password-panel">
-                <div className="owner-profile-password-head">
-                  <strong>Password Change</strong>
-                  <span>Confirm your current password before setting a new one.</span>
-                </div>
+            <div className="owner-profile-field-grid">
+              <label className="owner-profile-field">
+                <span>New Password</span>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, password: event.target.value }))
+                  }
+                  placeholder="Leave blank to keep current password"
+                />
+              </label>
 
-                <div className="owner-profile-field-grid">
-                  <label className="owner-profile-field">
-                    <span>Current Password</span>
-                    <input
-                      type="password"
-                      value={form.currentPassword}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          currentPassword: event.target.value,
-                        }))
-                      }
-                      placeholder="Enter your current password"
-                    />
-                  </label>
+              <label className="owner-profile-field">
+                <span>Confirm New Password</span>
+                <input
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, confirmPassword: event.target.value }))
+                  }
+                  placeholder="Repeat new password"
+                />
+              </label>
+            </div>
 
-                  <label className="owner-profile-field">
-                    <span>New Password</span>
-                    <input
-                      type="password"
-                      value={form.password}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, password: event.target.value }))
-                      }
-                      placeholder="Minimum 8 characters"
-                    />
-                  </label>
-                </div>
-
-                <label className="owner-profile-field">
-                  <span>Confirm New Password</span>
-                  <input
-                    type="password"
-                    value={form.confirmPassword}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, confirmPassword: event.target.value }))
-                    }
-                    placeholder="Repeat your new password"
-                  />
-                </label>
-              </div>
-            ) : (
-              <div className="owner-profile-help">
-                Use the Change Password button when you want to update your login credentials.
-              </div>
-            )}
+            <div className="owner-profile-help">
+              Leave the password fields blank to keep your current password.
+            </div>
           </div>
         </section>
       </div>

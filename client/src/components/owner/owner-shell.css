@@ -62,7 +62,7 @@
   display: block;
   font-size: 14px;
   letter-spacing: -0.01em;
-  font-weight: 900;
+  font-weight: 700;
   color: #fff;
 }
 
@@ -128,14 +128,14 @@
   display: grid;
   place-items: center;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
 .owner-shell-profile strong {
   display: block;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 700;
   color: #fff;
 }
 .owner-shell-profile span {
@@ -190,7 +190,7 @@
   justify-content: space-between;
   border: 1px solid transparent;
   transition: all 0.15s ease;
-  font-weight: 700;
+  font-weight: 500;
 }
 .owner-shell-nav-link:hover {
   background: rgba(238, 244, 255, 0.6);
@@ -200,7 +200,7 @@
   background: #eef4ff;
   border-color: #cfe0ff;
   color: #0b2b55;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .owner-shell-divider {
@@ -220,7 +220,7 @@
   background: #f7faff;
   color: #64748b;
   white-space: nowrap;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 /* ── Mobile nav trigger ── */
@@ -338,7 +338,7 @@
 .owner-shell-page-header h2 {
   margin: 0;
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.03em;
   color: #0f172a;
 }
@@ -362,7 +362,7 @@
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 600;
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid #e5eaf3;
@@ -386,7 +386,7 @@
   cursor: pointer;
   font-size: 13px;
   transition: 0.15s ease;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
 }
 .owner-shell-button:hover {
@@ -426,6 +426,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #64748b;
+  font-weight: 600;
 }
 .owner-shell-card-body { padding: 12px; }
 
@@ -440,7 +441,7 @@
 .owner-shell-stat-card small {
   display: block;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #64748b;
@@ -448,7 +449,7 @@
 .owner-shell-stat-card strong {
   display: block;
   margin-top: 8px;
-  font-weight: 900;
+  font-weight: 700;
   font-size: 20px;
   letter-spacing: -0.02em;
   color: #0f172a;
@@ -478,7 +479,7 @@
   display: block;
   margin: 0;
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 700;
   color: #0f172a;
 }
 .owner-shell-empty p,
@@ -507,7 +508,7 @@
   padding: 10px 12px;
   text-align: left;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #64748b;
@@ -516,7 +517,7 @@
   border-bottom: 1px solid #e5eaf3;
   padding: 10px 12px;
   vertical-align: top;
-  font-weight: 700;
+  font-weight: 500;
   color: #0f172a;
 }
 .owner-shell-table tbody tr:last-child td { border-bottom: 0; }

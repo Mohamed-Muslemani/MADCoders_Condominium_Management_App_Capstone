@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  InternalServerErrorException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -48,10 +49,10 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto) {
-    try {
-      const hash = await bcrypt.hash(dto.password, 10);
+    const hash = await bcrypt.hash(dto.password, 10);
 
-      const user = await this.prisma.user.create({
+    const user = await this.prisma.user
+      .create({
         data: {
           email: dto.email,
           passwordHash: hash,
@@ -62,13 +63,16 @@ export class UsersService {
           active: dto.active ?? true,
         },
         select: safeUserSelect,
-      });
+      })
+      .catch((error: any) => this.handlePrismaError(error));
 
+    try {
       await this.emailService.sendWelcomeEmail(user.email, user.firstName);
-
       return user;
-    } catch (error: any) {
-      this.handlePrismaError(error);
+    } catch {
+      throw new InternalServerErrorException(
+        'User account was created, but the welcome email could not be sent.',
+      );
     }
   }
 
@@ -99,6 +103,14 @@ export class UsersService {
 
   async updateOwnProfile(userId: string, dto: UpdateUserDto) {
     try {
+      const existing = await this.prisma.user.findUnique({
+        where: { userId },
+      });
+
+      if (!existing) {
+        throw new NotFoundException('User not found');
+      }
+
       const data: any = {
         email: dto.email,
         firstName: dto.firstName,
@@ -107,7 +119,26 @@ export class UsersService {
       };
 
       if (dto.password) {
+        if (!dto.currentPassword) {
+          throw new BadRequestException(
+            'Current password is required to set a new password.',
+          );
+        }
+
+        const passwordsMatch = await bcrypt.compare(
+          dto.currentPassword,
+          existing.passwordHash,
+        );
+
+        if (!passwordsMatch) {
+          throw new BadRequestException('Current password is incorrect.');
+        }
+
         data.passwordHash = await bcrypt.hash(dto.password, 10);
+      } else if (dto.currentPassword) {
+        throw new BadRequestException(
+          'New password is required when providing the current password.',
+        );
       }
 
       return await this.prisma.user.update({

@@ -137,7 +137,7 @@ function getTopAction(pathname: string) {
     { match: '/users', label: '+ New User', eventName: 'admin-users-create' },
     { match: '/units', label: '+ Create Unit', eventName: 'admin-units-create' },
     { match: '/unit-dues', label: '+ Create Due', eventName: 'admin-payments-create' },
-    { match: '/reserve-transactions', label: '+ Add Expense', eventName: 'admin-expenses-create' },
+    { match: '/reserve-transactions', label: '+ Add Transaction', eventName: 'admin-expenses-create' },
     { match: '/expense-categories', label: '+ New Category', eventName: 'admin-categories-create' },
     { match: '/maintenance-requests', label: '+ New Request', eventName: 'admin-maintenance-create' },
     { match: '/meetings', label: '+ New Meeting', eventName: 'admin-meetings-create' },

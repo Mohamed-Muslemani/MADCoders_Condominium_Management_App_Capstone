@@ -125,7 +125,7 @@ export class OwnerService {
     private readonly documentsQaService: DocumentsQaService,
   ) {}
 
-  async getDashboard(userId: string) {
+  async getDashboard(userId: string, selectedUnitId?: string) {
     const user = await this.prisma.user.findUnique({
       where: { userId },
       select: safeUserSelect,
@@ -137,7 +137,7 @@ export class OwnerService {
 
     const today = this.startOfToday();
 
-    const activeOwnership = await this.prisma.unitOwner.findFirst({
+    const activeOwnerships = await this.prisma.unitOwner.findMany({
       where: {
         userId,
         startDate: { lte: today },
@@ -166,6 +166,11 @@ export class OwnerService {
       },
     });
 
+    const activeOwnership =
+      (selectedUnitId
+        ? activeOwnerships.find((ownership) => ownership.unit.unitId === selectedUnitId)
+        : null) ?? activeOwnerships[0] ?? null;
+
     const dues = activeOwnership
       ? await this.prisma.unitDue.findMany({
           where: { unitId: activeOwnership.unit.unitId },
@@ -191,6 +196,21 @@ export class OwnerService {
       take: 3,
     });
 
+    const reserveTransactions = await this.prisma.reserveTransaction.findMany({
+      where: {
+        status: 'POSTED',
+      },
+      select: {
+        type: true,
+        amount: true,
+      },
+    });
+
+    const reserveFundTotal = reserveTransactions.reduce((sum, transaction) => {
+      const amount = Number(transaction.amount);
+      return transaction.type === 'EXPENSE' ? sum - amount : sum + amount;
+    }, 0);
+
     const availableDocumentCount = await this.prisma.document.count({
       where: {
         visibility: {
@@ -201,9 +221,11 @@ export class OwnerService {
 
     return {
       profile: user,
+      activeOwnerships,
       activeOwnership,
       dues,
       duesSummary: this.buildDuesSummary(activeOwnership, dues),
+      reserveFundTotal,
       documentsSummary: {
         availableCount: availableDocumentCount,
       },

@@ -14,6 +14,7 @@ import { OwnerDocumentsPage } from '../pages/OwnerDocumentsPage/OwnerDocumentsPa
 import { OwnerDuesPage } from '../pages/OwnerDuesPage/OwnerDuesPage';
 import { OwnerMaintenancePage } from '../pages/OwnerMaintenancePage/OwnerMaintenancePage';
 import { OwnerProfilePage } from '../pages/OwnerProfilePage/OwnerProfilePage';
+import { OwnerTransactionsPage } from '../pages/OwnerTransactionsPage/OwnerTransactionsPage';
 import { ReserveTransactionsPage } from '../pages/ReserveTransactionsPage/ReserveTransactionsPage';
 import { UnitDuesPage } from '../pages/UnitDuesPage/UnitDuesPage';
 import { UnitOwnersPage } from '../pages/UnitOwnersPage/UnitOwnersPage';
@@ -39,6 +40,7 @@ export function AppRoutes() {
         <Route element={<OwnerRoute />}>
           <Route path="/owner" element={<OwnerDashboardPage />} />
           <Route path="/owner/dues" element={<OwnerDuesPage />} />
+          <Route path="/owner/transactions" element={<OwnerTransactionsPage />} />
           <Route path="/owner/maintenance" element={<OwnerMaintenancePage />} />
           <Route path="/owner/documents" element={<OwnerDocumentsPage />} />
           <Route path="/owner/profile" element={<OwnerProfilePage />} />

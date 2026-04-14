@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -12,8 +12,11 @@ export class OwnerController {
   constructor(private readonly ownerService: OwnerService) {}
 
   @Get('dashboard')
-  async getDashboard(@Req() req: { user: { userId: string } }) {
-    return this.ownerService.getDashboard(req.user.userId);
+  async getDashboard(
+    @Req() req: { user: { userId: string } },
+    @Query('unitId') unitId?: string,
+  ) {
+    return this.ownerService.getDashboard(req.user.userId, unitId);
   }
 
   @Get('documents')

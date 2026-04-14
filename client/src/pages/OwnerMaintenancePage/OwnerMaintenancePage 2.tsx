@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import {
-  getSelectedOwnerUnitId,
   getOwnerDashboard,
-  setSelectedOwnerUnitId,
+  getOwnerMaintenanceRequests,
   submitOwnerMaintenanceRequest,
   uploadOwnerMaintenanceAttachment,
 } from '../../api/owner';
 import {
   downloadMaintenanceRequestAttachment,
   deleteMaintenanceRequest,
-  getMaintenanceRequests,
   updateMaintenanceRequest,
 } from '../../api/maintenanceRequests';
 import { OwnerLayout } from '../../components/owner/OwnerLayout';
@@ -36,8 +34,6 @@ type FormState = {
   scope: MaintenanceScope;
 };
 
-type RequestViewFilter = 'MINE' | 'UNIT' | 'ALL_UNITS' | 'BUILDING' | 'ALL';
-
 const initialFormState: FormState = {
   title: '',
   description: '',
@@ -58,11 +54,11 @@ function getStatusTone(status: MaintenanceRequest['status']) {
     return 'good' as const;
   }
 
-  if (status === 'IN_PROGRESS' || status === 'OPEN') {
+  if (status === 'IN_PROGRESS') {
     return 'warn' as const;
   }
 
-  return 'neutral' as const;
+  return 'bad' as const;
 }
 
 function formatStatus(status: MaintenanceRequest['status']) {
@@ -89,23 +85,18 @@ export function OwnerMaintenancePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editingRequest, setEditingRequest] = useState<MaintenanceRequest | null>(null);
   const [activeAttachmentId, setActiveAttachmentId] = useState<string | null>(null);
-  const [selectedUnitId, setSelectedUnitIdState] = useState(() => getSelectedOwnerUnitId());
-  const [requestViewFilter, setRequestViewFilter] = useState<RequestViewFilter>('MINE');
 
-  async function loadPage(unitId = selectedUnitId) {
+  async function loadPage() {
     try {
       setLoading(true);
       setError('');
 
       const [dashboardData, maintenanceData] = await Promise.all([
-        getOwnerDashboard(unitId || undefined),
-        getMaintenanceRequests({ take: 100 }),
+        getOwnerDashboard(),
+        getOwnerMaintenanceRequests({ take: 20 }),
       ]);
 
       setDashboard(dashboardData);
-      const resolvedUnitId = dashboardData.activeOwnership?.unit.unitId ?? '';
-      setSelectedOwnerUnitId(resolvedUnitId);
-      setSelectedUnitIdState(resolvedUnitId);
       setRequests(maintenanceData);
     } catch (requestError) {
       setError(
@@ -136,159 +127,14 @@ export function OwnerMaintenancePage() {
   }, [isModalOpen]);
 
   const activeUnit = dashboard?.activeOwnership?.unit ?? null;
-  const ownerships = dashboard?.activeOwnerships ?? [];
   const user = dashboard?.profile ?? null;
-  const ownedUnitIds = useMemo(
-    () => ownerships.map((ownership) => ownership.unit.unitId),
-    [ownerships],
-  );
-  const hasMultipleUnits = ownedUnitIds.length > 1;
-  const visibleRequests = useMemo(
-    () =>
-      requests.filter((request) => {
-        if (request.scope === 'BUILDING') {
-          return true;
-        }
-
-        if (request.submittedByUserId === user?.userId) {
-          return true;
-        }
-
-        return Boolean(selectedUnitId) && request.unitId === selectedUnitId;
-      }),
-    [requests, selectedUnitId, user?.userId],
-  );
-
-  const filteredRequests = useMemo(
-    () =>
-      visibleRequests.filter((request) => {
-        if (requestViewFilter === 'MINE') {
-          return request.submittedByUserId === user?.userId;
-        }
-
-        if (requestViewFilter === 'UNIT') {
-          return Boolean(selectedUnitId) && request.unitId === selectedUnitId;
-        }
-
-        if (requestViewFilter === 'ALL_UNITS') {
-          return request.unitId ? ownedUnitIds.includes(request.unitId) : false;
-        }
-
-        if (requestViewFilter === 'BUILDING') {
-          return request.scope === 'BUILDING';
-        }
-
-        return true;
-      }),
-    [ownedUnitIds, requestViewFilter, selectedUnitId, user?.userId, visibleRequests],
-  );
-
-  const submittedRequestCount = useMemo(
-    () =>
-      requests.filter((request) => request.submittedByUserId === user?.userId).length,
-    [requests, user?.userId],
-  );
-
-  const unitRequestCount = useMemo(
-    () =>
-      requests.filter(
-        (request) => Boolean(selectedUnitId) && request.unitId === selectedUnitId,
-      ).length,
-    [requests, selectedUnitId],
-  );
-
-  const buildingRequestCount = useMemo(
-    () => requests.filter((request) => request.scope === 'BUILDING').length,
-    [requests],
-  );
-
-  const allUnitsRequestCount = useMemo(
-    () =>
-      requests.filter(
-        (request) => (request.unitId ? ownedUnitIds.includes(request.unitId) : false),
-      ).length,
-    [ownedUnitIds, requests],
-  );
-
-  const filterBadgeLabel = useMemo(() => {
-    if (requestViewFilter === 'MINE') {
-      return `${submittedRequestCount} mine`;
-    }
-
-    if (requestViewFilter === 'UNIT') {
-      return `${unitRequestCount} unit`;
-    }
-
-    if (requestViewFilter === 'BUILDING') {
-      return `${buildingRequestCount} building`;
-    }
-
-    if (requestViewFilter === 'ALL_UNITS') {
-      return `${allUnitsRequestCount} units`;
-    }
-
-    return `${visibleRequests.length} visible`;
-  }, [
-    allUnitsRequestCount,
-    buildingRequestCount,
-    requestViewFilter,
-    submittedRequestCount,
-    unitRequestCount,
-    visibleRequests.length,
-  ]);
-
-  const emptyStateDescription = useMemo(() => {
-    if (requestViewFilter === 'MINE') {
-      return 'Your maintenance requests will appear here after you submit your first issue.';
-    }
-
-    if (requestViewFilter === 'UNIT') {
-      return 'Requests tied to your selected unit will appear here when they are available.';
-    }
-
-    if (requestViewFilter === 'BUILDING') {
-      return 'Building-wide requests will appear here when they are available.';
-    }
-
-    if (requestViewFilter === 'ALL_UNITS') {
-      return 'Requests across all of your owned units will appear here when they are available.';
-    }
-
-    return 'Visible maintenance activity will appear here when requests are available.';
-  }, [requestViewFilter]);
-
-  const filterHelpCopy = useMemo(() => {
-    if (requestViewFilter === 'MINE') {
-      return 'Showing only the requests you submitted. Only your own open requests can be edited or deleted.';
-    }
-
-    if (requestViewFilter === 'UNIT') {
-      return 'Showing requests linked to your selected unit, including requests from other co-owners when applicable.';
-    }
-
-    if (requestViewFilter === 'BUILDING') {
-      return 'Showing building-wide requests that affect common areas or shared operations.';
-    }
-
-    if (requestViewFilter === 'ALL_UNITS') {
-      return 'Showing requests across all of your owned units, including activity from co-owners on those same units.';
-    }
-
-    return 'Showing your requests alongside building-wide and selected-unit activity. Only your own open requests can be edited or deleted.';
-  }, [requestViewFilter]);
-
-  useEffect(() => {
-    if (!hasMultipleUnits && requestViewFilter === 'ALL_UNITS') {
-      setRequestViewFilter('UNIT');
-    }
-  }, [hasMultipleUnits, requestViewFilter]);
 
   const openRequestCount = useMemo(
     () =>
-      filteredRequests.filter(
+      requests.filter(
         (request) => request.status === 'OPEN' || request.status === 'IN_PROGRESS',
       ).length,
-    [filteredRequests],
+    [requests],
   );
 
   const navBadges: OwnerNavBadgeMap = useMemo(
@@ -296,13 +142,11 @@ export function OwnerMaintenancePage() {
       dashboard: 'Home',
       dues: dashboard?.duesSummary.unpaidCount
         ? `${dashboard.duesSummary.unpaidCount} unpaid`
-        : 'Up to date',
-      transactions: 'View all',
-      maintenance: `${filteredRequests.length} total`,
+        : undefined,
+      maintenance: `${requests.length} total`,
       documents: `${dashboard?.documentsSummary.availableCount ?? 0} docs`,
-      profile: 'Account',
     }),
-    [dashboard, filteredRequests.length],
+    [dashboard, requests.length],
   );
 
   function openModal() {
@@ -328,7 +172,7 @@ export function OwnerMaintenancePage() {
   }
 
   function openEditModal(request: MaintenanceRequest) {
-    if (request.status !== 'OPEN' || request.submittedByUserId !== user?.userId) {
+    if (request.status !== 'OPEN') {
       return;
     }
 
@@ -537,32 +381,10 @@ export function OwnerMaintenancePage() {
             <div>
               <h2>Maintenance</h2>
               <p>Submit a maintenance request to the building manager.</p>
-              {ownerships.length > 1 ? (
-                <div className="owner-maintenance-unit-switcher">
-                  <label htmlFor="owner-maintenance-unit">Viewing unit</label>
-                  <select
-                    id="owner-maintenance-unit"
-                    className="owner-maintenance-select"
-                    value={selectedUnitId}
-                    onChange={(event) => {
-                      const nextUnitId = event.target.value;
-                      setSelectedOwnerUnitId(nextUnitId);
-                      setSelectedUnitIdState(nextUnitId);
-                      void loadPage(nextUnitId);
-                    }}
-                  >
-                    {ownerships.map((ownership) => (
-                      <option key={ownership.unit.unitId} value={ownership.unit.unitId}>
-                        Unit {ownership.unit.unitNumber}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
             </div>
 
             <OwnerStatusPill
-              label={`${filteredRequests.length} shown`}
+              label={`${requests.length} submitted`}
               tone={openRequestCount > 0 ? 'warn' : 'good'}
             />
           </section>
@@ -591,32 +413,13 @@ export function OwnerMaintenancePage() {
             </OwnerCard>
 
             <OwnerCard
-              title="Requests"
-              badge={filterBadgeLabel}
+              title="My Requests"
+              badge={`${requests.length} total`}
             >
-              <div className="owner-maintenance-filters">
-                <select
-                  id="owner-maintenance-filter"
-                  className="owner-maintenance-select"
-                  value={requestViewFilter}
-                  onChange={(event) =>
-                    setRequestViewFilter(event.target.value as RequestViewFilter)
-                  }
-                >
-                  <option value="MINE">My requests</option>
-                  <option value="UNIT">{hasMultipleUnits ? 'Selected unit' : 'My unit'}</option>
-                  {hasMultipleUnits ? (
-                    <option value="ALL_UNITS">All my units</option>
-                  ) : null}
-                  <option value="BUILDING">Building</option>
-                  <option value="ALL">All visible</option>
-                </select>
-              </div>
-
-              {filteredRequests.length === 0 ? (
+              {requests.length === 0 ? (
                 <OwnerEmptyState
                   title="No requests yet"
-                  description={emptyStateDescription}
+                  description="Your maintenance requests will appear here after you submit your first issue."
                   action={
                     <OwnerActionButton variant="primary" onClick={openModal}>
                       Create request
@@ -626,15 +429,15 @@ export function OwnerMaintenancePage() {
               ) : (
                 <>
                   <div className="owner-maintenance-list">
-                    {filteredRequests.map((request) => (
+                    {requests.map((request) => (
                       <article
                         key={request.requestId}
                         className={[
                           'owner-maintenance-item',
-                          request.status === 'OPEN' && request.submittedByUserId === user?.userId ? 'is-open' : '',
+                          request.status === 'OPEN' ? 'is-open' : '',
                         ].join(' ')}
                         onClick={
-                          request.status === 'OPEN' && request.submittedByUserId === user?.userId
+                          request.status === 'OPEN'
                             ? () => openEditModal(request)
                             : undefined
                         }
@@ -647,13 +450,6 @@ export function OwnerMaintenancePage() {
                           <div className="owner-maintenance-meta">
                             <span className="owner-maintenance-tag">
                               {formatScope(request.scope)}
-                            </span>
-                            <span className="owner-maintenance-tag">
-                              {request.scope === 'BUILDING'
-                                ? 'Building request'
-                                : request.submittedByUserId === user?.userId
-                                  ? 'My request'
-                                  : `Unit ${request.unit?.unitNumber ?? 'request'}`}
                             </span>
                             <span className="owner-maintenance-tag">
                               {formatPriority(request.priority)}
@@ -694,7 +490,7 @@ export function OwnerMaintenancePage() {
                             tone={getStatusTone(request.status)}
                           />
 
-                          {request.status === 'OPEN' && request.submittedByUserId === user?.userId ? (
+                          {request.status === 'OPEN' ? (
                             <div onClick={(event) => event.stopPropagation()}>
                               <OwnerActionButton
                                 className="owner-maintenance-icon-button"
@@ -710,7 +506,8 @@ export function OwnerMaintenancePage() {
                   </div>
 
                   <div className="owner-maintenance-note">
-                    {filterHelpCopy}
+                    Open requests can be clicked to edit them, and attachments
+                    can be opened directly from each request card.
                   </div>
                 </>
               )}

@@ -18,7 +18,7 @@ const adminLinks = [
   { to: '/units', label: 'Units' },
   { to: '/unit-owners', label: 'Ownerships' },
   { to: '/unit-dues', label: 'Payments' },
-  { to: '/reserve-transactions', label: 'Expenses' },
+  { to: '/reserve-transactions', label: 'Transactions' },
   { to: '/expense-categories', label: 'Categories' },
   { to: '/maintenance-requests', label: 'Maintenance' },
   { to: '/meetings', label: 'Meetings' },

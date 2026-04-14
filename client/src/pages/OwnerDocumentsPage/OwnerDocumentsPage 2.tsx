@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   askOwnerDocuments,
-  getSelectedOwnerUnitId,
   getOwnerDashboard,
   getOwnerDocuments,
-  setSelectedOwnerUnitId,
 } from '../../api/owner';
 import { downloadDocumentVersion } from '../../api/documents';
 import { OwnerLayout } from '../../components/owner/OwnerLayout';
@@ -56,22 +54,18 @@ export function OwnerDocumentsPage() {
       pageEnd?: number | null;
     }>;
   } | null>(null);
-  const [selectedUnitId, setSelectedUnitIdState] = useState(() => getSelectedOwnerUnitId());
 
-  async function loadPage(unitId = selectedUnitId) {
+  async function loadPage() {
     try {
       setLoading(true);
       setError('');
 
       const [dashboardData, documentsData] = await Promise.all([
-        getOwnerDashboard(unitId || undefined),
+        getOwnerDashboard(),
         getOwnerDocuments(),
       ]);
 
       setDashboard(dashboardData);
-      const resolvedUnitId = dashboardData.activeOwnership?.unit.unitId ?? '';
-      setSelectedOwnerUnitId(resolvedUnitId);
-      setSelectedUnitIdState(resolvedUnitId);
       setDocuments(documentsData);
     } catch (requestError) {
       setError(
@@ -151,12 +145,10 @@ export function OwnerDocumentsPage() {
       dues: dashboard?.duesSummary.unpaidCount
         ? `${dashboard.duesSummary.unpaidCount} unpaid`
         : 'Up to date',
-      transactions: 'View all',
       maintenance: dashboard?.maintenance.length
         ? `${dashboard.maintenance.length} total`
         : '0 total',
       documents: `${documents.length} docs`,
-      profile: 'Account',
     }),
     [dashboard, documents.length],
   );
