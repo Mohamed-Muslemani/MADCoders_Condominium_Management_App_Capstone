@@ -35,9 +35,9 @@ const VISIBILITY_LABELS: Record<DocumentVisibility, string> = {
 
 function IndexPill({ status }: { status: string }) {
   const map: Record<string, { cls: string; label: string }> = {
-    PENDING: { cls: 'pill-pending', label: 'Indexing: Pending' },
-    INDEXED: { cls: 'pill-indexed', label: 'Indexing: Indexed' },
-    FAILED:  { cls: 'pill-failed',  label: 'Indexing: Failed' },
+    PENDING: { cls: 'pill-pending', label: 'AI Indexing: In Progress' },
+    INDEXED: { cls: 'pill-indexed', label: 'AI Ready' },
+    FAILED:  { cls: 'pill-failed',  label: 'AI Indexing: Failed' },
   };
   const { cls, label } = map[status] ?? map.PENDING;
   return <span className={`pill ${cls}`}><span className="s-dot" />{label}</span>;
@@ -58,6 +58,20 @@ function groupByDocType(docs: DocumentSummary[]) {
 function currentVersionStatus(d: DocumentSummary) {
   const v = d.versions.find(v => v.isCurrent) ?? d.versions[d.versions.length - 1];
   return v?.indexStatus ?? 'PENDING';
+}
+
+function getVersionToastMessage(version: { indexStatus: string; indexError?: string | null }) {
+  if (version.indexStatus === 'INDEXED') {
+    return 'Document uploaded and indexed for AI.';
+  }
+
+  if (version.indexStatus === 'FAILED') {
+    return version.indexError?.trim()
+      ? `Document uploaded, but AI indexing failed: ${version.indexError}`
+      : 'Document uploaded, but AI indexing failed.';
+  }
+
+  return 'Document uploaded. AI indexing is still in progress.';
 }
 
 /* ── Drawer ── */
@@ -374,13 +388,17 @@ export function DocumentsPage() {
       setSaving(true);
       if (mode === 'create') {
         const created = await createDocument(payload as CreateDocumentRequest);
-        if (file) await uploadDocumentVersion(created.documentId, file);
-        showToast('Document uploaded. Indexing started.');
+        if (file) {
+          const version = await uploadDocumentVersion(created.documentId, file);
+          showToast(getVersionToastMessage(version));
+        } else {
+          showToast('Document created.');
+        }
       } else if (active) {
         await updateDocument(active.documentId, payload as UpdateDocumentRequest);
         if (file) {
-          await uploadDocumentVersion(active.documentId, file);
-          showToast('New version uploaded.');
+          const version = await uploadDocumentVersion(active.documentId, file);
+          showToast(getVersionToastMessage(version));
         } else {
           showToast('Changes saved.');
         }
@@ -404,9 +422,9 @@ export function DocumentsPage() {
 
   async function handleGenerateEmbeddings(versionId: string) {
     try {
-      await generateDocumentEmbeddings(versionId);
+      const version = await generateDocumentEmbeddings(versionId);
       await fetchAll();
-      showToast('Indexing started.');
+      showToast(getVersionToastMessage(version));
     } catch { showToast('Could not generate embeddings.'); }
   }
 
@@ -460,7 +478,7 @@ export function DocumentsPage() {
               Documents
             </h2>
             <p className="m-0 mt-[6px] text-[13px] leading-[1.35] text-[#64748b]">
-              Upload documents grouped by type. After upload, indexing starts automatically.
+              Upload documents grouped by type. After upload, AI indexing runs automatically.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-[10px]">
