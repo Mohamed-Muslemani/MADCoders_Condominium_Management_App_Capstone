@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import './UsersPage.css';
 import {
   createUser,
@@ -372,6 +373,29 @@ export function UsersPage() {
     setDrawerError('');
   }
 
+  function getRequestErrorMessage(
+    requestError: unknown,
+    fallback: string,
+  ) {
+    if (axios.isAxiosError(requestError)) {
+      const message = requestError.response?.data?.message;
+
+      if (Array.isArray(message)) {
+        return message.join(' ');
+      }
+
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+    }
+
+    if (requestError instanceof Error && requestError.message.trim()) {
+      return requestError.message;
+    }
+
+    return fallback;
+  }
+
   async function handleSave(payload: CreateUserRequest | UpdateUserRequest) {
     try {
       setSaving(true);
@@ -385,11 +409,14 @@ export function UsersPage() {
 
       closeDrawer();
       await loadAll();
-    } catch {
+    } catch (requestError) {
       setDrawerError(
-        mode === 'create'
-          ? 'Could not create the user. The email may already be in use.'
-          : 'Could not update the user. The email may already be in use.',
+        getRequestErrorMessage(
+          requestError,
+          mode === 'create'
+            ? 'Could not create the user.'
+            : 'Could not update the user.',
+        ),
       );
     } finally {
       setSaving(false);

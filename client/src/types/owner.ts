@@ -8,6 +8,7 @@ import type { User } from './user';
 export const ownerRoutePaths = {
   dashboard: '/owner',
   dues: '/owner/dues',
+  transactions: '/owner/transactions',
   maintenance: '/owner/maintenance',
   documents: '/owner/documents',
   profile: '/owner/profile',
@@ -18,6 +19,7 @@ export type OwnerRouteKey = keyof typeof ownerRoutePaths;
 export interface OwnerNavBadgeMap {
   dashboard?: string;
   dues?: string;
+  transactions?: string;
   maintenance?: string;
   documents?: string;
   profile?: string;
@@ -156,9 +158,11 @@ export interface OwnerDocumentsSummary {
 
 export interface OwnerDashboardResponse {
   profile: User;
+  activeOwnerships: OwnerDashboardActiveOwnership[];
   activeOwnership?: OwnerDashboardActiveOwnership | null;
   dues: UnitDue[];
   duesSummary: OwnerDuesSummary;
+  reserveFundTotal: number;
   documentsSummary: OwnerDocumentsSummary;
   announcements: Announcement[];
   maintenance: MaintenanceRequest[];

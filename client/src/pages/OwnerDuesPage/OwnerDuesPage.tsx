@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getOwnerDashboard } from '../../api/owner';
+import { getOwnerDashboard, getSelectedOwnerUnitId, setSelectedOwnerUnitId } from '../../api/owner';
 import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
   OwnerActionButton,
@@ -51,12 +51,17 @@ export function OwnerDuesPage() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<UnitDueStatus | ''>('');
+  const [selectedUnitId, setSelectedUnitIdState] = useState(() => getSelectedOwnerUnitId());
 
-  async function loadPage() {
+  async function loadPage(unitId = selectedUnitId) {
     try {
       setLoading(true);
       setError('');
-      setDashboard(await getOwnerDashboard());
+      const data = await getOwnerDashboard(unitId || undefined);
+      setDashboard(data);
+      const resolvedUnitId = data.activeOwnership?.unit.unitId ?? '';
+      setSelectedOwnerUnitId(resolvedUnitId);
+      setSelectedUnitIdState(resolvedUnitId);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -74,6 +79,7 @@ export function OwnerDuesPage() {
 
   const dues = dashboard?.dues ?? [];
   const activeUnit = dashboard?.activeOwnership?.unit ?? null;
+  const ownerships = dashboard?.activeOwnerships ?? [];
   const user = dashboard?.profile ?? null;
   const duesSummary = dashboard?.duesSummary ?? null;
 
@@ -103,10 +109,12 @@ export function OwnerDuesPage() {
     () => ({
       dashboard: 'Home',
       dues: duesSummary?.unpaidCount ? `${duesSummary.unpaidCount} unpaid` : 'Up to date',
+      transactions: 'View all',
       maintenance: dashboard?.maintenance.length
         ? `${dashboard.maintenance.length} total`
         : '0 total',
       documents: `${dashboard?.documentsSummary.availableCount ?? 0} docs`,
+      profile: 'Account',
     }),
     [dashboard, duesSummary],
   );
@@ -162,6 +170,28 @@ export function OwnerDuesPage() {
           <div>
             <h2>Dues</h2>
             <p>Simple list of your dues history and current status.</p>
+            {ownerships.length > 1 ? (
+              <div className="owner-dues-unit-switcher">
+                <label htmlFor="owner-dues-unit">Viewing unit</label>
+                <select
+                  id="owner-dues-unit"
+                  className="owner-dues-select"
+                  value={selectedUnitId}
+                  onChange={(event) => {
+                    const nextUnitId = event.target.value;
+                    setSelectedOwnerUnitId(nextUnitId);
+                    setSelectedUnitIdState(nextUnitId);
+                    void loadPage(nextUnitId);
+                  }}
+                >
+                  {ownerships.map((ownership) => (
+                    <option key={ownership.unit.unitId} value={ownership.unit.unitId}>
+                      Unit {ownership.unit.unitNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
 
           <OwnerStatusPill

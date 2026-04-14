@@ -21,6 +21,32 @@
   flex-wrap: wrap;
 }
 
+.owner-profile-unit-switcher {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.owner-profile-unit-switcher span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.owner-profile-unit-switcher select {
+  border: 1px solid #e5eaf3;
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  padding: 8px 12px;
+  border-radius: 12px;
+  outline: none;
+  font-size: 13px;
+  color: #0f172a;
+  cursor: pointer;
+  font-family: inherit;
+}
+
 .owner-profile-stats {
   margin-top: 12px;
   display: grid;
@@ -44,7 +70,7 @@
 .owner-profile-stat-card p {
   margin: 0;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #64748b;
@@ -53,7 +79,7 @@
 .owner-profile-stat-card strong {
   display: block;
   margin-top: 6px;
-  font-weight: 900;
+  font-weight: 700;
   font-size: 14px;
   color: #0f172a;
   overflow-wrap: anywhere;
@@ -82,7 +108,7 @@
 .owner-profile-card-head h3 {
   margin: 0;
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.01em;
   color: #0f172a;
 }
@@ -92,7 +118,7 @@
   font-size: 12px;
   line-height: 1.35;
   color: #64748b;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .owner-profile-card-actions {
@@ -123,7 +149,7 @@
 
 .owner-profile-field span {
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 600;
   color: #64748b;
 }
 
@@ -157,15 +183,41 @@
   border-radius: 14px;
   padding: 12px 14px;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .owner-profile-help {
   border-top: 1px solid #e5eaf3;
   padding-top: 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   color: #64748b;
+}
+
+.owner-profile-password-panel {
+  border: 1px solid #e5eaf3;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.owner-profile-password-head strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.owner-profile-password-head span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+  font-weight: 500;
 }
 
 @media (max-width: 960px) {
