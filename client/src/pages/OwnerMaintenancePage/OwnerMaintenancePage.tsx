@@ -38,6 +38,45 @@ type FormState = {
 
 type RequestViewFilter = 'MINE' | 'UNIT' | 'ALL_UNITS' | 'BUILDING' | 'ALL';
 
+const requestFilterCopy: Record<
+  RequestViewFilter,
+  {
+    emptyStateDescription: string;
+    helpText: string;
+  }
+> = {
+  MINE: {
+    emptyStateDescription:
+      'Your maintenance requests will appear here after you submit your first issue.',
+    helpText:
+      'Showing only the requests you submitted. Only your own open requests can be edited or deleted.',
+  },
+  UNIT: {
+    emptyStateDescription:
+      'Requests tied to your selected unit will appear here when they are available.',
+    helpText:
+      'Showing requests linked to your selected unit, including requests from other co-owners when applicable.',
+  },
+  ALL_UNITS: {
+    emptyStateDescription:
+      'Requests across all of your owned units will appear here when they are available.',
+    helpText:
+      'Showing requests across all of your owned units, including activity from co-owners on those same units.',
+  },
+  BUILDING: {
+    emptyStateDescription:
+      'Building-wide requests will appear here when they are available.',
+    helpText:
+      'Showing building-wide requests that affect common areas or shared operations.',
+  },
+  ALL: {
+    emptyStateDescription:
+      'Visible maintenance activity will appear here when requests are available.',
+    helpText:
+      'Showing your requests alongside building-wide and selected-unit activity. Only your own open requests can be edited or deleted.',
+  },
+};
+
 const initialFormState: FormState = {
   title: '',
   description: '',
@@ -210,72 +249,34 @@ export function OwnerMaintenancePage() {
     [ownedUnitIds, requests],
   );
 
+  const requestCountByFilter = useMemo(
+    () => ({
+      MINE: submittedRequestCount,
+      UNIT: unitRequestCount,
+      ALL_UNITS: allUnitsRequestCount,
+      BUILDING: buildingRequestCount,
+      ALL: visibleRequests.length,
+    }),
+    [
+      allUnitsRequestCount,
+      buildingRequestCount,
+      submittedRequestCount,
+      unitRequestCount,
+      visibleRequests.length,
+    ],
+  );
+
   const filterBadgeLabel = useMemo(() => {
-    if (requestViewFilter === 'MINE') {
-      return `${submittedRequestCount} mine`;
-    }
+    const count = requestCountByFilter[requestViewFilter];
 
-    if (requestViewFilter === 'UNIT') {
-      return `${unitRequestCount} unit`;
-    }
+    if (requestViewFilter === 'MINE') return `${count} mine`;
+    if (requestViewFilter === 'UNIT') return `${count} unit`;
+    if (requestViewFilter === 'ALL_UNITS') return `${count} units`;
+    if (requestViewFilter === 'BUILDING') return `${count} building`;
+    return `${count} visible`;
+  }, [requestCountByFilter, requestViewFilter]);
 
-    if (requestViewFilter === 'BUILDING') {
-      return `${buildingRequestCount} building`;
-    }
-
-    if (requestViewFilter === 'ALL_UNITS') {
-      return `${allUnitsRequestCount} units`;
-    }
-
-    return `${visibleRequests.length} visible`;
-  }, [
-    allUnitsRequestCount,
-    buildingRequestCount,
-    requestViewFilter,
-    submittedRequestCount,
-    unitRequestCount,
-    visibleRequests.length,
-  ]);
-
-  const emptyStateDescription = useMemo(() => {
-    if (requestViewFilter === 'MINE') {
-      return 'Your maintenance requests will appear here after you submit your first issue.';
-    }
-
-    if (requestViewFilter === 'UNIT') {
-      return 'Requests tied to your selected unit will appear here when they are available.';
-    }
-
-    if (requestViewFilter === 'BUILDING') {
-      return 'Building-wide requests will appear here when they are available.';
-    }
-
-    if (requestViewFilter === 'ALL_UNITS') {
-      return 'Requests across all of your owned units will appear here when they are available.';
-    }
-
-    return 'Visible maintenance activity will appear here when requests are available.';
-  }, [requestViewFilter]);
-
-  const filterHelpCopy = useMemo(() => {
-    if (requestViewFilter === 'MINE') {
-      return 'Showing only the requests you submitted. Only your own open requests can be edited or deleted.';
-    }
-
-    if (requestViewFilter === 'UNIT') {
-      return 'Showing requests linked to your selected unit, including requests from other co-owners when applicable.';
-    }
-
-    if (requestViewFilter === 'BUILDING') {
-      return 'Showing building-wide requests that affect common areas or shared operations.';
-    }
-
-    if (requestViewFilter === 'ALL_UNITS') {
-      return 'Showing requests across all of your owned units, including activity from co-owners on those same units.';
-    }
-
-    return 'Showing your requests alongside building-wide and selected-unit activity. Only your own open requests can be edited or deleted.';
-  }, [requestViewFilter]);
+  const activeFilterCopy = requestFilterCopy[requestViewFilter];
 
   useEffect(() => {
     if (!hasMultipleUnits && requestViewFilter === 'ALL_UNITS') {
@@ -616,7 +617,7 @@ export function OwnerMaintenancePage() {
               {filteredRequests.length === 0 ? (
                 <OwnerEmptyState
                   title="No requests yet"
-                  description={emptyStateDescription}
+                  description={activeFilterCopy.emptyStateDescription}
                   action={
                     <OwnerActionButton variant="primary" onClick={openModal}>
                       Create request
@@ -710,7 +711,7 @@ export function OwnerMaintenancePage() {
                   </div>
 
                   <div className="owner-maintenance-note">
-                    {filterHelpCopy}
+                    {activeFilterCopy.helpText}
                   </div>
                 </>
               )}
