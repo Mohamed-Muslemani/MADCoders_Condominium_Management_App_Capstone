@@ -17,7 +17,7 @@
 .owner-maintenance-hero h2 {
   margin: 0;
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.03em;
   color: #0f172a;
 }
@@ -26,7 +26,7 @@
   margin: 6px 0 0;
   color: #64748b;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.35;
 }
 
@@ -34,6 +34,28 @@
   margin-top: 12px;
   display: grid;
   gap: 12px;
+}
+
+.owner-maintenance-filters,
+.owner-maintenance-unit-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.owner-maintenance-filters {
+  margin-bottom: 12px;
+}
+
+.owner-maintenance-unit-switcher {
+  margin-top: 10px;
+}
+
+.owner-maintenance-unit-switcher label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
 }
 
 /* ── Request list ── */
@@ -75,7 +97,7 @@
 .owner-maintenance-icon-button { min-width: 42px; padding: 0 12px; }
 
 .owner-maintenance-item strong {
-  font-weight: 900;
+  font-weight: 700;
   font-size: 13px;
   color: #0f172a;
 }
@@ -83,7 +105,7 @@
 .owner-maintenance-item-copy {
   margin-top: 6px;
   color: #64748b;
-  font-weight: 800;
+  font-weight: 500;
   font-size: 12px;
   line-height: 1.45;
 }
@@ -100,7 +122,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 600;
   padding: 5px 10px;
   border-radius: 999px;
   border: 1px solid #e5eaf3;
@@ -113,7 +135,7 @@
   margin-top: 10px;
   color: #64748b;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.35;
 }
 
@@ -130,7 +152,7 @@
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 600;
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid #e5eaf3;
@@ -162,7 +184,7 @@
   margin-top: 8px;
   color: #64748b;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 /* ── Modal ── */
@@ -202,7 +224,7 @@
 .owner-maintenance-modal-head strong {
   display: block;
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: #0f172a;
 }
@@ -230,7 +252,7 @@
   display: block;
   margin-bottom: 6px;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #64748b;
@@ -262,6 +284,10 @@
   cursor: not-allowed;
   opacity: 0.7;
 }
+.owner-maintenance-filters .owner-maintenance-select {
+  flex: 0 0 190px;
+  cursor: pointer;
+}
 .owner-maintenance-textarea {
   min-height: 120px;
   resize: vertical;
@@ -271,7 +297,7 @@
   margin-top: 10px;
   color: #64748b;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.35;
 }
 
@@ -300,4 +326,5 @@
 
 @media (max-width: 520px) {
   .owner-maintenance-hero { flex-direction: column; align-items: flex-start; }
+  .owner-maintenance-filters .owner-maintenance-select { flex-basis: 100%; }
 }

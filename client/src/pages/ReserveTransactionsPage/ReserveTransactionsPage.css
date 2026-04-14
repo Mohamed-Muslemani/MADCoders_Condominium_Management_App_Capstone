@@ -73,6 +73,9 @@
     gap: 10px;
     align-items: center;
   }
+  .transaction-toolbar {
+    grid-template-columns: minmax(220px, 1fr) repeat(3, 160px) auto;
+  }
   .toolbar-field {
     display: flex;
     align-items: center;
@@ -102,6 +105,36 @@
     color: #0f172a;
     cursor: pointer;
     font-family: inherit;
+  }
+
+  .transaction-summary {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .transaction-summary-card {
+    border: 1px solid #e5eaf3;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(15,23,42,0.04);
+    padding: 12px;
+  }
+  .transaction-summary-card small {
+    display: block;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+  .transaction-summary-card strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f172a;
   }
   
   /* ── List header ── */
@@ -231,6 +264,12 @@
   .exp-chip.date        { background: #fff; border-color: #e5eaf3; color: #64748b; }
   .exp-chip.receipt-yes { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
   .exp-chip.no-receipt  { background: #f8fafc; border-color: #e5eaf3; color: #94a3b8; }
+  .exp-chip.expense-type { background: #eef4ff; border-color: #dbe7ff; color: #0b2b55; }
+  .exp-chip.projection-type { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .exp-chip.status-posted { background: #ecfdf3; border-color: #bbf7d0; color: #166534; }
+  .exp-chip.status-planned { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+  .exp-chip.status-cancelled { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+  .exp-chip.category-chip { background: #f8fafc; border-color: #e5eaf3; color: #475569; }
 .exp-arrow { color: #94a3b8; font-size: 16px; font-weight: 900; flex-shrink: 0; }
 .exp-row:hover .exp-arrow { color: #2563eb; }
   
@@ -260,6 +299,25 @@
     z-index: 90;
     display: flex;
     flex-direction: column;
+  }
+
+  @media (max-width: 1100px) {
+    .transaction-toolbar {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .transaction-summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .transaction-toolbar,
+    .exp-toolbar {
+      grid-template-columns: 1fr;
+    }
+    .transaction-summary {
+      grid-template-columns: 1fr;
+    }
   }
   .drawer-head {
     padding: 14px;

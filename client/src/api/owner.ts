@@ -16,6 +16,29 @@ import type { DocumentSummary } from '../types/document';
 import type { OwnerDashboardResponse, OwnerDuesQuery } from '../types/owner';
 import { api } from './client';
 
+export const OWNER_SELECTED_UNIT_KEY = 'owner_selected_unit_id';
+
+export function getSelectedOwnerUnitId() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return window.localStorage.getItem(OWNER_SELECTED_UNIT_KEY) ?? '';
+}
+
+export function setSelectedOwnerUnitId(unitId: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (!unitId) {
+    window.localStorage.removeItem(OWNER_SELECTED_UNIT_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(OWNER_SELECTED_UNIT_KEY, unitId);
+}
+
 export async function getOwnerProfile() {
   return getCurrentUserProfile();
 }
@@ -49,8 +72,10 @@ export async function getOwnerUnitDues({ unitId }: OwnerDuesQuery) {
   return getUnitDuesByUnit(unitId);
 }
 
-export async function getOwnerDashboard() {
-  const { data } = await api.get<OwnerDashboardResponse>('/owner/dashboard');
+export async function getOwnerDashboard(unitId?: string) {
+  const { data } = await api.get<OwnerDashboardResponse>('/owner/dashboard', {
+    params: unitId ? { unitId } : undefined,
+  });
   return data;
 }
 

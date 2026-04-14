@@ -17,7 +17,7 @@
 .owner-documents-hero h2 {
   margin: 0;
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.03em;
   color: #0f172a;
 }
@@ -26,7 +26,7 @@
   margin: 6px 0 0;
   color: #64748b;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.35;
 }
 
@@ -44,14 +44,14 @@
   border-radius: 14px;
   padding: 10px 12px;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 /* ── AI panel ── */
 .owner-documents-ai-copy {
   color: #64748b;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.5;
 }
 
@@ -91,7 +91,7 @@
   border-radius: 14px;
   padding: 10px 12px;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .owner-documents-ai-result {
@@ -106,7 +106,7 @@
   color: #0f172a;
   font-size: 13px;
   line-height: 1.55;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .owner-documents-ai-citations {
@@ -118,7 +118,7 @@
 .owner-documents-ai-citation-label {
   color: #64748b;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 2px;
@@ -131,7 +131,7 @@
   border-radius: 10px;
   padding: 6px 10px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 /* ── Document list ── */
@@ -158,7 +158,7 @@
 }
 
 .owner-documents-item-title {
-  font-weight: 900;
+  font-weight: 700;
   font-size: 13px;
   color: #0f172a;
 }
@@ -167,7 +167,7 @@
   margin-top: 6px;
   color: #64748b;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.45;
 }
 

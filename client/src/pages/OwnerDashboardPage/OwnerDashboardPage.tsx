@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  getSelectedOwnerUnitId,
   getOwnerDashboard,
+  setSelectedOwnerUnitId,
 } from '../../api/owner';
 import { OwnerLayout } from '../../components/owner/OwnerLayout';
 import {
@@ -44,13 +46,19 @@ export function OwnerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [state, setState] = useState<OwnerDashboardResponse | null>(null);
+  const [selectedUnitId, setSelectedUnitIdState] = useState(() => getSelectedOwnerUnitId());
 
-  async function loadDashboard() {
+  async function loadDashboard(unitId = selectedUnitId) {
     try {
       setLoading(true);
       setError('');
 
-      setState(await getOwnerDashboard());
+      const data = await getOwnerDashboard(unitId || undefined);
+      setState(data);
+
+      const resolvedUnitId = data.activeOwnership?.unit.unitId ?? '';
+      setSelectedOwnerUnitId(resolvedUnitId);
+      setSelectedUnitIdState(resolvedUnitId);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -81,9 +89,11 @@ export function OwnerDashboardPage() {
       dues: state?.duesSummary.unpaidCount
         ? `${state.duesSummary.unpaidCount} unpaid`
         : 'Up to date',
+      transactions: 'View all',
       maintenance:
         openMaintenanceCount > 0 ? `${openMaintenanceCount} open` : '0 open',
       documents: `${state?.documentsSummary.availableCount ?? 0} docs`,
+      profile: 'Account',
     }),
     [openMaintenanceCount, state],
   );
@@ -137,6 +147,7 @@ export function OwnerDashboardPage() {
   const maintenanceStatusLabel =
     openMaintenanceCount > 0 ? 'Attention needed' : 'Up to date';
   const activeUnit = state.activeOwnership?.unit ?? null;
+  const ownerships = state.activeOwnerships ?? [];
   const duesSummary = state.duesSummary;
 
   return (
@@ -203,6 +214,28 @@ export function OwnerDashboardPage() {
                 </>
               )}
             </p>
+
+            {ownerships.length > 1 ? (
+              <div className="owner-dashboard-switcher">
+                <label htmlFor="owner-unit-switcher">Viewing unit</label>
+                <select
+                  id="owner-unit-switcher"
+                  value={selectedUnitId}
+                  onChange={(event) => {
+                    const nextUnitId = event.target.value;
+                    setSelectedOwnerUnitId(nextUnitId);
+                    setSelectedUnitIdState(nextUnitId);
+                    void loadDashboard(nextUnitId);
+                  }}
+                >
+                  {ownerships.map((ownership) => (
+                    <option key={ownership.unit.unitId} value={ownership.unit.unitId}>
+                      Unit {ownership.unit.unitNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -242,19 +275,13 @@ export function OwnerDashboardPage() {
           <div className="owner-dashboard-card-body">
             <div className="owner-dashboard-hero-box">
               <small>
-                Current balance
+                Reserve fund total
               </small>
               <div className="owner-dashboard-balance">
-                {formatCurrency(duesSummary.currentBalance)}
+                {formatCurrency(state.reserveFundTotal)}
               </div>
               <div className="owner-dashboard-hero-sub">
-                {activeUnit ? (
-                  <>
-                    Monthly fee • Next due {formatDate(duesSummary.nextDueDate ?? null)}
-                  </>
-                ) : (
-                  'Your unit details will appear here once an active ownership is assigned to your account.'
-                )}
+                Matches the building funds total shown on the admin dashboard.
               </div>
             </div>
 
@@ -315,7 +342,7 @@ export function OwnerDashboardPage() {
                       <span className="feed-copy">{announcement.content}</span>
                     </div>
 
-                    <span className="inline-flex whitespace-nowrap rounded-full border border-[#e5eaf3] bg-[#f8fafc] px-[10px] py-[6px] text-[12px] font-black text-slate-500">
+                    <span className="inline-flex whitespace-nowrap rounded-full border border-[#e5eaf3] bg-[#f8fafc] px-[10px] py-[6px] text-[12px] font-semibold text-slate-500">
                       {announcement.pinned ? 'Pinned' : formatDate(announcement.publishedAt ?? announcement.createdAt)}
                     </span>
                   </article>
