@@ -82,8 +82,8 @@ export class DocumentIngestionService {
         this.prisma.documentVersion.update({
           where: { versionId },
           data: {
-            indexStatus: IndexStatus.INDEXED,
-            indexedAt: new Date(),
+            indexStatus: IndexStatus.PENDING,
+            indexedAt: null,
             indexError: null,
           },
         }),
