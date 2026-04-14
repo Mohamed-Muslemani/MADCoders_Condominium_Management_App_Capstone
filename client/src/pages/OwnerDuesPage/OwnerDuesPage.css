@@ -4,7 +4,8 @@
 
 .owner-dues-hero {
   padding: 16px;
-  border-bottom: 1px solid #e5eaf3;
+  border-radius: 18px;
+  border: 1px solid #e5eaf3;
   background: linear-gradient(180deg, #ffffff, #fbfcff);
   display: flex;
   align-items: flex-end;
@@ -15,23 +16,30 @@
 
 .owner-dues-hero h2 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 950;
+  font-size: 20px;
+  font-weight: 900;
   letter-spacing: -0.03em;
+  color: #0f172a;
 }
 
 .owner-dues-hero p {
   margin: 6px 0 0;
   color: #64748b;
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
 }
 
 .owner-dues-content {
-  padding: 14px;
+  margin-top: 12px;
   display: grid;
-  gap: 14px;
+  gap: 12px;
+}
+
+.owner-dues-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
 .owner-dues-filters {
@@ -44,49 +52,39 @@
 .owner-dues-input,
 .owner-dues-select {
   border: 1px solid #e5eaf3;
-  background: linear-gradient(180deg, #fff, #fbfcff);
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
   padding: 10px 12px;
   border-radius: 14px;
   outline: none;
   font-size: 13px;
   color: #0f172a;
+  font-family: inherit;
   min-height: 42px;
+  transition: .15s ease;
+}
+.owner-dues-input:focus,
+.owner-dues-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
 }
 
-.owner-dues-input {
-  flex: 1 1 220px;
-}
-
-.owner-dues-select {
-  flex: 0 0 180px;
-}
-
-.owner-dues-summary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
+.owner-dues-input  { flex: 1 1 220px; }
+.owner-dues-select { flex: 0 0 160px; cursor: pointer; }
 
 .owner-dues-row-count {
   margin-top: 10px;
   color: #64748b;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 800;
 }
 
 @media (max-width: 920px) {
-  .owner-dues-summary {
-    grid-template-columns: 1fr 1fr;
-  }
+  .owner-dues-summary { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 520px) {
   .owner-dues-input,
-  .owner-dues-select {
-    flex-basis: 100%;
-  }
-
-  .owner-dues-summary {
-    grid-template-columns: 1fr;
-  }
+  .owner-dues-select { flex-basis: 100%; }
+  .owner-dues-summary { grid-template-columns: 1fr; }
+  .owner-dues-hero { flex-direction: column; align-items: flex-start; }
 }

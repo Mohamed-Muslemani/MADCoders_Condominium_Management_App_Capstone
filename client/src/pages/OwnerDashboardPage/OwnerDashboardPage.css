@@ -1,13 +1,11 @@
 .owner-dashboard-page {
   color: #0f172a;
-  background:
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 28%),
-    linear-gradient(180deg, #ffffff, #fbfdff 28%, #f7f9fc 100%);
 }
 
 .owner-dashboard-header {
   padding: 16px;
-  border-bottom: 1px solid #e5eaf3;
+  border-radius: 18px;
+  border: 1px solid #e5eaf3;
   background: linear-gradient(180deg, #ffffff, #fbfcff);
   display: flex;
   align-items: center;
@@ -24,31 +22,33 @@
 }
 
 .owner-dashboard-who-badge {
-  width: 46px;
-  height: 46px;
-  border-radius: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
-  background: #fff;
-  border: 1px solid #e5eaf3;
+  background: #eef4ff;
+  border: 1px solid #dbe7ff;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-  font-weight: 950;
+  font-weight: 900;
   color: #0b2b55;
   font-size: 16px;
+  flex-shrink: 0;
 }
 
 .owner-dashboard-who h1 {
   margin: 0;
   font-size: 18px;
-  font-weight: 950;
+  font-weight: 900;
   letter-spacing: -0.03em;
+  color: #0f172a;
 }
 
 .owner-dashboard-who p {
   margin: 6px 0 0;
   color: #64748b;
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
 }
 
@@ -60,31 +60,32 @@
   justify-content: flex-end;
 }
 
+/* ── Grid ── */
 .owner-dashboard-grid {
-  padding: 14px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
-  gap: 16px;
+  gap: 12px;
   align-items: start;
 }
 
 .owner-dashboard-full {
-  padding: 0 14px 14px;
+  margin-top: 12px;
 }
 
+/* ── Cards ── */
 .owner-dashboard-card {
   border: 1px solid #e5eaf3;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(8px);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
   overflow: hidden;
 }
 
 .owner-dashboard-card-head {
-  padding: 14px 14px 12px;
+  padding: 12px;
   border-bottom: 1px solid #e5eaf3;
-  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,252,255,0.9));
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -97,58 +98,61 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #64748b;
+  font-weight: 900;
 }
 
 .owner-dashboard-card-body {
-  padding: 14px;
+  padding: 12px;
 }
 
+/* ── Hero box ── */
 .owner-dashboard-hero-box {
-  border: 1px solid #dbe7ff;
-  border-radius: 20px;
-  padding: 16px;
-  background: #ffffff;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5eaf3;
+  border-radius: 18px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .owner-dashboard-hero-box small {
   display: block;
   font-size: 11px;
-  font-weight: 950;
-  letter-spacing: 0.1em;
+  font-weight: 900;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #64748b;
 }
 
 .owner-dashboard-balance {
-  margin-top: 10px;
-  font-size: 32px;
-  font-weight: 950;
+  margin-top: 8px;
+  font-size: 28px;
+  font-weight: 900;
   letter-spacing: -0.03em;
-  color: #0b2b55;
+  color: #0f172a;
 }
 
 .owner-dashboard-hero-sub {
-  margin-top: 8px;
+  margin-top: 6px;
   color: #64748b;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1.35;
 }
 
+/* ── Stats ── */
 .owner-dashboard-stats {
-  margin-top: 14px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .owner-dashboard-stat,
 .owner-dashboard-kv {
   border: 1px solid #e5eaf3;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #ffffff, #fbfcff);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
   padding: 12px;
 }
 
@@ -156,8 +160,8 @@
 .owner-dashboard-kv small {
   display: block;
   font-size: 11px;
-  font-weight: 950;
-  letter-spacing: 0.1em;
+  font-weight: 900;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #64748b;
 }
@@ -166,81 +170,82 @@
 .owner-dashboard-kv strong {
   display: block;
   margin-top: 6px;
-  font-weight: 950;
+  font-weight: 900;
   font-size: 13px;
   letter-spacing: -0.01em;
+  color: #0f172a;
   word-break: break-word;
 }
 
+/* ── Feed ── */
 .owner-dashboard-feed {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .owner-dashboard-feed-item {
   border: 1px solid #e5eaf3;
   border-radius: 16px;
-  background: linear-gradient(180deg, #ffffff, #fbfcff);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-  padding: 12px 14px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  padding: 12px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
+  transition: .12s ease;
+}
+.owner-dashboard-feed-item:hover {
+  border-color: #dbe7ff;
+  transform: translateY(-1px);
 }
 
 .owner-dashboard-feed-item strong {
-  font-weight: 950;
+  font-weight: 900;
+  font-size: 13px;
+  color: #0f172a;
 }
 
 .owner-dashboard-feed-item span.feed-copy {
   display: block;
   margin-top: 4px;
   color: #64748b;
-  font-weight: 850;
+  font-weight: 800;
   font-size: 12px;
   line-height: 1.35;
 }
 
+/* ── KV grid ── */
 .owner-dashboard-kv-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .owner-dashboard-kv:last-child {
   grid-column: span 2;
 }
 
-.owner-dashboard-note {
-  margin-top: 12px;
-}
-
+/* ── Responsive ── */
 @media (max-width: 1100px) {
   .owner-dashboard-grid {
     grid-template-columns: 1fr;
   }
-
   .owner-dashboard-kv-grid {
     grid-template-columns: 1fr 1fr;
   }
-
   .owner-dashboard-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
-
   .owner-dashboard-kv:last-child {
     grid-column: auto;
   }
 }
 
 @media (max-width: 520px) {
-  .owner-dashboard-who {
-    min-width: unset;
-  }
-
-  .owner-dashboard-kv-grid {
-    grid-template-columns: 1fr;
-  }
+  .owner-dashboard-who { min-width: unset; }
+  .owner-dashboard-kv-grid { grid-template-columns: 1fr; }
+  .owner-dashboard-stats { grid-template-columns: 1fr; }
+  .owner-dashboard-header { flex-direction: column; align-items: flex-start; }
 }
