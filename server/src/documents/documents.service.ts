@@ -290,19 +290,29 @@ export class DocumentsService {
       throw error;
     }
 
-    await this.ingestionService.processDocumentVersion(version.versionId);
-    return this.findVersion(version.versionId);
+    return this.processVersionForAi(version.versionId);
   }
 
   async reprocessVersion(versionId: string) {
     await this.findVersion(versionId);
-    await this.ingestionService.processDocumentVersion(versionId);
-    return this.findVersion(versionId);
+    return this.processVersionForAi(versionId);
   }
 
   async generateEmbeddings(versionId: string) {
     await this.findVersion(versionId);
     await this.embeddingsService.generateForVersion(versionId);
+    return this.findVersion(versionId);
+  }
+
+  private async processVersionForAi(versionId: string) {
+    try {
+      await this.ingestionService.processDocumentVersion(versionId);
+      await this.embeddingsService.generateForVersion(versionId);
+    } catch {
+      // Return the current version state so the UI can show a precise failure
+      // message instead of treating the upload as missing entirely.
+    }
+
     return this.findVersion(versionId);
   }
 
