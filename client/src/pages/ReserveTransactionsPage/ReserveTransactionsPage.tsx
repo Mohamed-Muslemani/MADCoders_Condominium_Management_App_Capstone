@@ -52,7 +52,9 @@ function formatDate(value?: string | null) {
 }
 
 function formatType(type: ReserveTransactionType) {
-  return type === 'EXPENSE' ? 'Expense' : 'Projection';
+  if (type === 'EXPENSE') return 'Expense';
+  if (type === 'ADJUSTMENT') return 'Adjustment';
+  return 'Projection';
 }
 
 function formatStatus(status: ReserveTransactionStatus) {
@@ -62,7 +64,9 @@ function formatStatus(status: ReserveTransactionStatus) {
 }
 
 function transactionChipClass(type: ReserveTransactionType) {
-  return type === 'EXPENSE' ? 'exp-chip expense-type' : 'exp-chip projection-type';
+  if (type === 'EXPENSE') return 'exp-chip expense-type';
+  if (type === 'ADJUSTMENT') return 'exp-chip status-posted';
+  return 'exp-chip projection-type';
 }
 
 function statusChipClass(status: ReserveTransactionStatus) {
@@ -159,7 +163,7 @@ function ExpenseDrawer({
   }, [receiptPreviewUrl]);
 
   useEffect(() => {
-    if (type === 'EXPENSE' && status === 'PLANNED') {
+    if ((type === 'EXPENSE' || type === 'ADJUSTMENT') && status === 'PLANNED') {
       setStatus('POSTED');
     }
 
@@ -195,7 +199,10 @@ function ExpenseDrawer({
     const nextErrors: Record<string, string> = {};
     if (!title.trim()) nextErrors.title = 'Title is required.';
     if (!amount) nextErrors.amount = 'Amount is required.';
-    else if (isNaN(Number(amount)) || Number(amount) <= 0) {
+    else if (
+      isNaN(Number(amount)) ||
+      (type === 'ADJUSTMENT' ? Number(amount) === 0 : Number(amount) <= 0)
+    ) {
       nextErrors.amount = 'Must be a valid amount.';
     }
 
@@ -205,6 +212,10 @@ function ExpenseDrawer({
 
     if (type === 'PROJECTION' && !expectedDate) {
       nextErrors.expectedDate = 'Expected date is required.';
+    }
+
+    if (type === 'ADJUSTMENT' && !transactionDate) {
+      nextErrors.transactionDate = 'Posted date is required.';
     }
 
     setErrors(nextErrors);
@@ -275,7 +286,12 @@ function ExpenseDrawer({
     }
   }
 
-  const headerText = type === 'EXPENSE' ? 'Transaction details for a completed expense.' : 'Track a projected future cost.';
+  const headerText =
+    type === 'EXPENSE'
+      ? 'Transaction details for a completed expense.'
+      : type === 'ADJUSTMENT'
+        ? 'Manual correction or opening balance entry for the reserve fund.'
+        : 'Track a projected future cost.';
 
   return (
     <>
@@ -298,7 +314,7 @@ function ExpenseDrawer({
             <span className="mt-1 block text-[12px] leading-[1.35] text-[#64748b]">
               {isEdit
                 ? `${formatType(type)} • ${formatStatus(status)}`
-                : 'Create an expense or projection and keep supporting details together.'}
+                : 'Create an expense, projection, or adjustment and keep supporting details together.'}
             </span>
           </div>
           <button className="x-btn" onClick={onClose}>✕</button>
@@ -373,6 +389,8 @@ function ExpenseDrawer({
               <p className="receipt-tip mt-[10px]">
                 {type === 'PROJECTION'
                   ? 'Projections can be saved without receipts and updated later when they become real expenses.'
+                  : type === 'ADJUSTMENT'
+                    ? 'Adjustments are for opening balances or manual reserve corrections. Receipts are optional.'
                   : 'Receipts are optional but useful when you want a full expense trail.'}
               </p>
             </div>
@@ -395,6 +413,7 @@ function ExpenseDrawer({
                   >
                     <option value="EXPENSE">Expense</option>
                     <option value="PROJECTION">Projection</option>
+                    <option value="ADJUSTMENT">Adjustment</option>
                   </select>
                 </div>
                 <div>
@@ -404,16 +423,16 @@ function ExpenseDrawer({
                     value={status}
                     onChange={(e) => setStatus(e.target.value as ReserveTransactionStatus)}
                   >
-                    {type === 'EXPENSE' ? (
-                      <>
-                        <option value="POSTED">Posted</option>
-                        <option value="CANCELLED">Cancelled</option>
-                      </>
-                    ) : (
+                    {type === 'PROJECTION' ? (
                       <>
                         <option value="PLANNED">Planned</option>
                         <option value="CANCELLED">Cancelled</option>
                         <option value="POSTED">Posted</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="POSTED">Posted</option>
+                        <option value="CANCELLED">Cancelled</option>
                       </>
                     )}
                   </select>
@@ -426,7 +445,13 @@ function ExpenseDrawer({
                   className="form-input"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder={type === 'EXPENSE' ? 'e.g., Plumbing repair - lobby' : 'e.g., Roof membrane replacement'}
+                  placeholder={
+                    type === 'EXPENSE'
+                      ? 'e.g., Plumbing repair - lobby'
+                      : type === 'ADJUSTMENT'
+                        ? 'e.g., Opening reserve balance'
+                        : 'e.g., Roof membrane replacement'
+                  }
                 />
                 {errors.title ? <div className="field-err">{errors.title}</div> : null}
               </div>
@@ -503,16 +528,18 @@ function ExpenseDrawer({
                   <input
                     className="form-input"
                     type="number"
-                    min="0.01"
+                    min={type === 'ADJUSTMENT' ? undefined : '0.01'}
                     step="0.01"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="e.g., 487.25"
+                    placeholder={type === 'ADJUSTMENT' ? 'e.g., 25000.00 or -350.00' : 'e.g., 487.25'}
                   />
                   {errors.amount ? <div className="field-err">{errors.amount}</div> : null}
                 </div>
                 <div>
-                  <label className="form-label">Expense Date</label>
+                  <label className="form-label">
+                    {type === 'ADJUSTMENT' ? 'Posted Date' : 'Expense Date'}
+                  </label>
                   <input
                     className="form-input"
                     type="date"
@@ -646,6 +673,7 @@ export function ReserveTransactionsPage() {
 
   const projectionCount = filtered.filter((transaction) => transaction.type === 'PROJECTION').length;
   const expenseCount = filtered.filter((transaction) => transaction.type === 'EXPENSE').length;
+  const adjustmentCount = filtered.filter((transaction) => transaction.type === 'ADJUSTMENT').length;
   const totalAmount = filtered.reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
   function openCreate() {
@@ -793,7 +821,7 @@ export function ReserveTransactionsPage() {
               Transactions
             </h2>
             <p className="m-0 mt-[6px] text-[13px] leading-[1.35] text-[#64748b]">
-              Manage posted expenses and future projections in one place.
+              Manage expenses, future projections, and reserve adjustments in one place.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-[10px]">
@@ -827,6 +855,10 @@ export function ReserveTransactionsPage() {
           <strong>{projectionCount}</strong>
         </div>
         <div className="transaction-summary-card">
+          <small>Adjustments</small>
+          <strong>{adjustmentCount}</strong>
+        </div>
+        <div className="transaction-summary-card">
           <small>Combined value</small>
           <strong>${formatCurrency(totalAmount)}</strong>
         </div>
@@ -855,6 +887,7 @@ export function ReserveTransactionsPage() {
           <option value="ALL">All types</option>
           <option value="EXPENSE">Expenses</option>
           <option value="PROJECTION">Projections</option>
+          <option value="ADJUSTMENT">Adjustments</option>
         </select>
         <select
           className="toolbar-select"
@@ -923,7 +956,13 @@ export function ReserveTransactionsPage() {
               onClick={() => openEdit(transaction)}
             >
               <div className={`exp-thumb ${transaction.receiptFile ? '' : 'no-receipt'}`}>
-                {transaction.receiptFile ? 'Stored receipt' : transaction.type === 'PROJECTION' ? 'Projection' : 'No receipt'}
+                {transaction.receiptFile
+                  ? 'Stored receipt'
+                  : transaction.type === 'PROJECTION'
+                    ? 'Projection'
+                    : transaction.type === 'ADJUSTMENT'
+                      ? 'Adjustment'
+                      : 'No receipt'}
               </div>
               <div className="exp-content">
                 <div className="exp-title">{transaction.title}</div>
@@ -939,8 +978,12 @@ export function ReserveTransactionsPage() {
                   </span>
                   <span className="exp-chip amount">${formatCurrency(transaction.amount)}</span>
                   <span className="exp-chip date">
-                    {transaction.type === 'EXPENSE' ? 'Paid' : 'Expected'}: {formatDate(
-                      transaction.type === 'EXPENSE'
+                    {transaction.type === 'EXPENSE'
+                      ? 'Paid'
+                      : transaction.type === 'ADJUSTMENT'
+                        ? 'Posted'
+                        : 'Expected'}: {formatDate(
+                      transaction.type === 'EXPENSE' || transaction.type === 'ADJUSTMENT'
                         ? transaction.transactionDate
                         : transaction.expectedDate,
                     )}

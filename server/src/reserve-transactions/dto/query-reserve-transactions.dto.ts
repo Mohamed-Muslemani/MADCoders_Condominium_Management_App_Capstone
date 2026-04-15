@@ -6,8 +6,8 @@ export class QueryReserveTransactionsDto {
   categoryId?: string;
 
   @IsOptional()
-  @IsEnum(['EXPENSE', 'PROJECTION'] as const)
-  type?: 'EXPENSE' | 'PROJECTION';
+  @IsEnum(['EXPENSE', 'PROJECTION', 'ADJUSTMENT'] as const)
+  type?: 'EXPENSE' | 'PROJECTION' | 'ADJUSTMENT';
 
   @IsOptional()
   @IsEnum(['POSTED', 'PLANNED', 'CANCELLED'] as const)

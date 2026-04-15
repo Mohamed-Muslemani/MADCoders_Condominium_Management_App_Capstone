@@ -81,10 +81,10 @@ export function DashboardPage() {
   const missedPayments = dues.filter(d => d.status === 'UNPAID').length;
 
   const totalFunds = transactions
-    .filter(t => t.status === 'POSTED')
+    .filter(t => t.status === 'POSTED' && (t.type === 'EXPENSE' || t.type === 'ADJUSTMENT'))
     .reduce((sum, t) => {
       const amt = Number(t.amount);
-      return t.type === 'EXPENSE' ? sum - amt : sum + amt;
+      return t.type === 'EXPENSE' ? sum - Math.abs(amt) : sum + amt;
     }, 0);
 
   const healthScore = dues.length > 0
@@ -124,7 +124,10 @@ export function DashboardPage() {
     let running = 0;
     for (const t of posted) {
       const date = (t.transactionDate ?? t.createdAt).slice(0, 7);
-      running += t.type === 'EXPENSE' ? -Number(t.amount) : Number(t.amount);
+      if (t.type === 'PROJECTION') {
+        continue;
+      }
+      running += t.type === 'EXPENSE' ? -Math.abs(Number(t.amount)) : Number(t.amount);
       map[date] = running;
     }
     return map;
