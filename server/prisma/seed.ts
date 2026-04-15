@@ -369,8 +369,44 @@ async function seedTransactions(
     expectedDate: dateAt(2026, ((index + 1) % 4) + 1, 3 + (index % 20)),
   }));
 
+  const adjustmentRows = [
+    {
+      categoryId: categories[1]?.categoryId ?? categories[0].categoryId,
+      createdByUserId: adminUserId,
+      type: 'ADJUSTMENT' as const,
+      status: 'POSTED' as const,
+      title: 'Initial reserve fund opening balance',
+      description: 'Opening reserve balance entered during system setup.',
+      amount: '50000.00',
+      transactionDate: dateAt(2026, 1, 1),
+      expectedDate: null,
+    },
+    {
+      categoryId: categories[4]?.categoryId ?? categories[0].categoryId,
+      createdByUserId: adminUserId,
+      type: 'ADJUSTMENT' as const,
+      status: 'POSTED' as const,
+      title: 'Year-start interest adjustment',
+      description: 'Interest earned and applied to the reserve account.',
+      amount: '1450.00',
+      transactionDate: dateAt(2026, 2, 2),
+      expectedDate: null,
+    },
+    {
+      categoryId: categories[0].categoryId,
+      createdByUserId: adminUserId,
+      type: 'ADJUSTMENT' as const,
+      status: 'POSTED' as const,
+      title: 'Audit correction entry',
+      description: 'Minor reserve ledger correction after audit review.',
+      amount: '-325.00',
+      transactionDate: dateAt(2026, 3, 7),
+      expectedDate: null,
+    },
+  ];
+
   await prisma.reserveTransaction.createMany({
-    data: [...projectionRows, ...expenseRows],
+    data: [...projectionRows, ...expenseRows, ...adjustmentRows],
   });
 }
 

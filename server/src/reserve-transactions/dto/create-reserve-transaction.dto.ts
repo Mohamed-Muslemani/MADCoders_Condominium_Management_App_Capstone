@@ -3,9 +3,9 @@ import {
   IsDateString,
   IsEnum,
   IsNumber,
+  IsNotEmpty,
   IsOptional,
   IsString,
-  Min,
 } from 'class-validator';
 
 export class CreateReserveTransactionDto {
@@ -13,8 +13,8 @@ export class CreateReserveTransactionDto {
   @IsString()
   categoryId?: string;
 
-  @IsEnum(['EXPENSE', 'PROJECTION'] as const)
-  type: 'EXPENSE' | 'PROJECTION';
+  @IsEnum(['EXPENSE', 'PROJECTION', 'ADJUSTMENT'] as const)
+  type: 'EXPENSE' | 'PROJECTION' | 'ADJUSTMENT';
 
   @IsEnum(['POSTED', 'PLANNED', 'CANCELLED'] as const)
   status: 'POSTED' | 'PLANNED' | 'CANCELLED';
@@ -28,7 +28,7 @@ export class CreateReserveTransactionDto {
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0.01)
+  @IsNotEmpty()
   amount: number;
 
   @IsOptional()

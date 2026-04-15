@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  Min,
   ValidateIf,
 } from 'class-validator';
 
@@ -16,8 +15,8 @@ export class UpdateReserveTransactionDto {
   categoryId?: string | null;
 
   @IsOptional()
-  @IsEnum(['EXPENSE', 'PROJECTION'] as const)
-  type?: 'EXPENSE' | 'PROJECTION';
+  @IsEnum(['EXPENSE', 'PROJECTION', 'ADJUSTMENT'] as const)
+  type?: 'EXPENSE' | 'PROJECTION' | 'ADJUSTMENT';
 
   @IsOptional()
   @IsEnum(['POSTED', 'PLANNED', 'CANCELLED'] as const)
@@ -34,7 +33,6 @@ export class UpdateReserveTransactionDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0.01)
   amount?: number;
 
   @IsOptional()
