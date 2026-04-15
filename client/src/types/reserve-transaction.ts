@@ -2,7 +2,7 @@ import type { User } from './user';
 import type { ExpenseCategory } from './expense-category';
 import type { StoredFileSummary } from './document';
 
-export type ReserveTransactionType = 'EXPENSE' | 'PROJECTION';
+export type ReserveTransactionType = 'EXPENSE' | 'PROJECTION' | 'ADJUSTMENT';
 export type ReserveTransactionStatus = 'POSTED' | 'PLANNED' | 'CANCELLED';
 
 export interface ReserveTransaction {

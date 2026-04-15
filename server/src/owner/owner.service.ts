@@ -199,6 +199,9 @@ export class OwnerService {
     const reserveTransactions = await this.prisma.reserveTransaction.findMany({
       where: {
         status: 'POSTED',
+        type: {
+          in: ['EXPENSE', 'ADJUSTMENT'],
+        },
       },
       select: {
         type: true,
@@ -208,7 +211,11 @@ export class OwnerService {
 
     const reserveFundTotal = reserveTransactions.reduce((sum, transaction) => {
       const amount = Number(transaction.amount);
-      return transaction.type === 'EXPENSE' ? sum - amount : sum + amount;
+      if (transaction.type === 'EXPENSE') {
+        return sum - Math.abs(amount);
+      }
+
+      return sum + amount;
     }, 0);
 
     const availableDocumentCount = await this.prisma.document.count({

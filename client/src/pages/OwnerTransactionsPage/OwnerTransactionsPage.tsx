@@ -35,7 +35,9 @@ function formatDate(value?: string | null) {
 }
 
 function formatType(type: ReserveTransactionType) {
-  return type === 'EXPENSE' ? 'Expense' : 'Projection';
+  if (type === 'EXPENSE') return 'Expense';
+  if (type === 'ADJUSTMENT') return 'Adjustment';
+  return 'Projection';
 }
 
 function formatStatus(status: ReserveTransactionStatus) {
@@ -115,6 +117,7 @@ export function OwnerTransactionsPage() {
 
   const expenseCount = filteredTransactions.filter((transaction) => transaction.type === 'EXPENSE').length;
   const projectionCount = filteredTransactions.filter((transaction) => transaction.type === 'PROJECTION').length;
+  const adjustmentCount = filteredTransactions.filter((transaction) => transaction.type === 'ADJUSTMENT').length;
   const totalAmount = filteredTransactions.reduce((sum, transaction) => sum + Number(transaction.amount), 0);
 
   const user = dashboard?.profile ?? null;
@@ -187,7 +190,7 @@ export function OwnerTransactionsPage() {
         <section className="owner-transactions-hero">
           <div>
             <h2>Transactions</h2>
-            <p>See both upcoming projections and posted expenses for the building reserve activity.</p>
+            <p>See upcoming projections, posted expenses, and reserve adjustments for the building.</p>
             {ownerships.length > 1 ? (
               <div className="owner-transactions-unit-switcher">
                 <label htmlFor="owner-transactions-unit">Viewing unit</label>
@@ -223,6 +226,7 @@ export function OwnerTransactionsPage() {
             <OwnerStatCard label="Total value" value={formatCurrency(totalAmount)} />
             <OwnerStatCard label="Expenses" value={expenseCount} />
             <OwnerStatCard label="Projections" value={projectionCount} />
+            <OwnerStatCard label="Adjustments" value={adjustmentCount} />
             <OwnerStatCard label="Records" value={filteredTransactions.length} />
           </div>
 
@@ -244,6 +248,7 @@ export function OwnerTransactionsPage() {
                   <option value="ALL">All types</option>
                   <option value="EXPENSE">Expenses</option>
                   <option value="PROJECTION">Projections</option>
+                  <option value="ADJUSTMENT">Adjustments</option>
                 </select>
                 <select
                   className="owner-transactions-select"
@@ -302,9 +307,13 @@ export function OwnerTransactionsPage() {
                           {transaction.category?.name ?? 'Uncategorized'}
                         </span>
                         <span className="owner-transactions-tag">
-                          {transaction.type === 'EXPENSE' ? 'Expense date' : 'Expected date'}:{' '}
+                          {transaction.type === 'EXPENSE'
+                            ? 'Expense date'
+                            : transaction.type === 'ADJUSTMENT'
+                              ? 'Posted date'
+                              : 'Expected date'}:{' '}
                           {formatDate(
-                            transaction.type === 'EXPENSE'
+                            transaction.type === 'EXPENSE' || transaction.type === 'ADJUSTMENT'
                               ? transaction.transactionDate
                               : transaction.expectedDate,
                           )}

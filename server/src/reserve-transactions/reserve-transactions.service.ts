@@ -210,6 +210,7 @@ export class ReserveTransactionsService {
 
   async create(createdByUserId: string, dto: CreateReserveTransactionDto) {
     this.validateDates(dto.transactionDate, dto.expectedDate);
+    this.validateAmount(dto.type, dto.amount);
     await this.ensureCategoryExists(dto.categoryId);
 
     try {
@@ -242,6 +243,8 @@ export class ReserveTransactionsService {
       where: { transactionId },
       select: {
         transactionId: true,
+        type: true,
+        amount: true,
         transactionDate: true,
         expectedDate: true,
       },
@@ -264,11 +267,14 @@ export class ReserveTransactionsService {
         : dto.expectedDate === null
           ? null
           : new Date(dto.expectedDate);
+    const nextType = dto.type ?? existing.type;
+    const nextAmount = dto.amount ?? Number(existing.amount);
 
     this.validateDates(
       nextTransactionDate ? nextTransactionDate.toISOString() : undefined,
       nextExpectedDate ? nextExpectedDate.toISOString() : undefined,
     );
+    this.validateAmount(nextType, nextAmount);
     await this.ensureCategoryExists(dto.categoryId ?? undefined);
 
     try {
@@ -514,6 +520,19 @@ export class ReserveTransactionsService {
       throw new BadRequestException(
         'transactionDate cannot be after expectedDate',
       );
+    }
+  }
+
+  private validateAmount(
+    type: 'EXPENSE' | 'PROJECTION' | 'ADJUSTMENT',
+    amount: number,
+  ) {
+    if (!Number.isFinite(amount) || amount === 0) {
+      throw new BadRequestException('amount must be a non-zero number');
+    }
+
+    if ((type === 'EXPENSE' || type === 'PROJECTION') && amount < 0) {
+      throw new BadRequestException(`${type.toLowerCase()} amounts must be positive`);
     }
   }
 
