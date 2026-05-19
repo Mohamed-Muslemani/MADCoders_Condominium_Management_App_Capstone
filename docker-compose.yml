@@ -37,6 +37,13 @@ services:
       DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@example.com}
       PASSWORD: ${PASSWORD:-ChangeMe123!}
       PORT: ${PORT:-3000}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_TEST_TO: ${RESEND_TEST_TO:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Condo Manager <no-reply@example.com>}
+      SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-your-email@example.com}
+      SMTP_PASS: ${SMTP_PASS:-replace-me}
     ports:
       - "3000:3000"
     volumes:
