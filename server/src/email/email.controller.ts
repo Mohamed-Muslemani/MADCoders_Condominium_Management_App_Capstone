@@ -12,7 +12,7 @@ export class EmailController {
     }
 
     await this.emailService.sendUnpaidDuesReminder(
-      process.env.SMTP_USER || '',
+      process.env.RESEND_TEST_TO || process.env.SMTP_USER || '',
       'Chris Jamo',
       'Unit 101',
       '450.00',

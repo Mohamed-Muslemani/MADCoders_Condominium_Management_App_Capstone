@@ -1,32 +1,48 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { render } from '@react-email/render';
+import { Resend } from 'resend';
 import { WelcomeEmail } from './templates/welcome-email';
 
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
+  // private transporter: nodemailer.Transporter;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    this.resend = new Resend(process.env.RESEND_API_KEY);
+
+    // SMTP fallback.
+    // this.transporter = nodemailer.createTransport({
+    //   host: process.env.SMTP_HOST,
+    //   port: Number(process.env.SMTP_PORT) || 587,
+    //   secure: false,
+    //   auth: {
+    //     user: process.env.SMTP_USER,
+    //     pass: process.env.SMTP_PASS,
+    //   },
+    // });
   }
 
   async sendEmail(to: string, subject: string, html: string): Promise<void> {
     try {
-      await this.transporter.sendMail({
+      const { error } = await this.resend.emails.send({
         from: process.env.EMAIL_FROM,
         to,
         subject,
         html,
       });
+
+      if (error) {
+        throw error;
+      }
+
+      // await this.transporter.sendMail({
+      //   from: process.env.EMAIL_FROM,
+      //   to,
+      //   subject,
+      //   html,
+      // });
     } catch (error) {
       console.error('Email sending failed:', error);
       throw new InternalServerErrorException('Failed to send email');
